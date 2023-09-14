@@ -6,11 +6,13 @@ This guide also assumes you need to setup the OrangePi 5B from scratch, which me
 
 ## Extremely crucial OS requirements
 
-Two things you **must make sure**:
+Some things you **must make sure**:
 
 - The OS you have is for the Orangepi **5B**. If you have the OS for OrangePi 5 or even the OrangePi 5 Plus, this will **not** work.
 
 - You **must** use the Ubuntu **GNOME** version (not xfce, not custom OS).
+
+- The SD Card must be at most **32GB** (less than the eMMC size at 64GB). If you have a 64GB SD Card, you need to shrink the partition to 32GB or less.
 
 Why? As of the time wrting this guide, only the GNOME version has **3D acceleration** enabled by OrangePi. Without 3D acceleration, the slideshow player will not work properly.
 
@@ -22,11 +24,40 @@ Steps to search for the OrangePi 5B OS:
 
 ## Initial SD Card Setup
 
-### 1. All the necessary packages
+### 1. Install the OS to the SD Card
 
-Run the `setup.sh` script to update chromium, install Tailscale and configure the WiFi:
+- Use the [balenaEtcher](https://www.balena.io/etcher/) to install the OS to the SD Card. You can also use the `dd` command to do this, but I find balenaEtcher is more user-friendly.
+
+### 2. Power up the OrangePi 5B with the SD Card
+
+- Plug in the SD Card to the OrangePi 5B **before** powering it up. The OrangePi 5B will set priority to boot from the SD Card if it detects one.
+
+### 3. Migrate the all the scripts to the SD Card
+
+Multiple ways to do this:
+
+- Use a USB to transfer the files to the SD Card
+- Use the `rsync` command to transfer the files to the SD Card through the `ssh` connection. Must be connected to the same network as the OrangePi 5B. The default username and password for the OrangePi 5B is `orangepi` and `orangepi` respectively.
+
+  ```bash
+  rsync -av -e ssh --progress ./ orangepi@<ip-address>:/home/orangepi/player
+  ```
+
+  Where `<ip-address>` is the IP address of the OrangePi 5B. You can find the IP address by running the `ifconfig` command on the OrangePi 5B.
+
+- Clone the repository directly on the OrangePi 5B. The same copy of this repository is also hosted on a public repository associated with Kai orangead account. To clone the repository, run the following command:
+
+  ```bash
+  git clone https://github.com/oa-kai/opi-setup.git
+  ```
+
+### 4. Install all the necessary packages
+
+On the OrangePi 5B, open the `Terminal` app and run the `setup.sh` script to update chromium, install Tailscale:
 
 ```bash
+cd
+cd player
 ./setup.sh
 ```
 
@@ -74,6 +105,8 @@ Personal -> Hostname
 Execute the `player.sh` script to set up the slideshow player:
 
 ```bash
+cd
+cd player
 ./player.sh
 ```
 
