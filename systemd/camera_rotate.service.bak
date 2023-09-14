@@ -1,0 +1,11 @@
+[Unit]
+Description=Rotate Camera Feed
+After=multi-user.target
+
+[Service]
+ExecStart=/usr/bin/ffmpeg -f video4linux2 -input_format mjpeg -video_size 1280x720 -max_delay 0 -max_probe_packets 1 -flags +low_delay -framerate 30 -fflags nobuffer -analyzeduration 0 -i /dev/video0 -vf "rotate=3*PI/2" -pix_fmt yuv420p -f v4l2 /dev/video4
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
