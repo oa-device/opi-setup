@@ -1,0 +1,17 @@
+[Unit]
+Description=Run slideshow-player at startup
+After=graphical.target
+
+[Service]
+Type=simple
+User=orangepi 
+Environment=DISPLAY=:0
+ExecStartPre=/bin/sleep 5
+ExecStart=/home/orangepi/player/prod/dist/linux/slideshow-player
+Restart=on-failure
+RestartSec=5
+StandardOutput=file:/home/orangepi/player/logs/slideshow_log.log
+StandardError=file:/home/orangepi/player/logs/slideshow_log.log
+
+[Install]
+WantedBy=graphical.target

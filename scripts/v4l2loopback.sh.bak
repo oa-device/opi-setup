@@ -1,0 +1,64 @@
+#!/bin/bash
+
+echo "========== SETTING UP v4l2loopback =========="
+
+# Initialize a flag to indicate whether v4l2loopback is already loaded
+v4l2_already_loaded=0
+
+# Check if v4l2loopback module is already loaded
+if lsmod | grep "v4l2loopback" &> /dev/null ; then
+    echo "v4l2loopback module is already loaded."
+    v4l2_already_loaded=1
+fi
+
+# Only proceed with installation if v4l2loopback is not already loaded
+if [ $v4l2_already_loaded -eq 0 ]; then
+    # Extract the linux-headers package to /usr/src
+    echo "Installing linux-headers-legacy-rockchip-rk3588 package..."
+    sudo dpkg -i /home/orangepi/player/kernel/linux-headers-legacy-rockchip-rk3588_1.0.2_arm64.deb
+
+    # Create a symbolic link to the build directory
+    echo "Creating symbolic link to the build directory..."
+    sudo ln -s /usr/src/linux-headers-5.10.110-rockchip-rk3588 /lib/modules/5.10.110-rockchip-rk3588/build
+
+    # Clone the v4l2loopback repository
+    echo "Cloning v4l2loopback repository..."
+    cd ~
+    git clone https://github.com/umlaeute/v4l2loopback.git
+    cd v4l2loopback
+
+    # Compile the module
+    echo "Compiling v4l2loopback module..."
+    make
+
+    # Manually copy the module to the correct directory
+    echo "Copying v4l2loopback module to the kernel directory..."
+    sudo cp v4l2loopback.ko /lib/modules/$(uname -r)/kernel/drivers/media/v4l2-core/
+
+    # Update module dependencies
+    echo "Updating module dependencies..."
+    sudo depmod -a
+fi
+
+# Load the v4l2loopback module with specified options
+echo "Loading v4l2loopback module..."
+sudo modprobe -r v4l2loopback
+sudo modprobe v4l2loopback card_label="Rotated USB Camera" video_nr=4 exclusive_caps=1
+
+# Modify the v4l2loopback configuration
+echo "Modifying v4l2loopback configuration..."
+echo "options v4l2loopback card_label=\"Rotated USB Camera\" video_nr=4 exclusive_caps=1" | sudo tee /etc/modprobe.d/v4l2loopback.conf > /dev/null
+
+# Add v4l2loopback to be loaded at boot
+echo "Adding v4l2loopback to be loaded at boot..."
+echo "v4l2loopback" | sudo tee -a /etc/modules > /dev/null
+
+# Check if the module is loaded
+echo "Checking if the v4l2loopback module is loaded..."
+if lsmod | grep "v4l2loopback" &> /dev/null ; then
+    echo "v4l2loopback module is loaded."
+else
+    echo "v4l2loopback module is not loaded."
+fi
+
+echo "========== v4l2loopback SETUP COMPLETE =========="
