@@ -1,8 +1,73 @@
 # slideshow_player Setup Guide
 
-This guide assume that you guys have already set up the OrangePi 5B with the OS and have it connected to the internet. For the OS, please refer to the **Extremely crucial requirements** section.
+This guide will walk you through steps to **set up the template SD Card**, then **migrate to eMMC** and finally **onboarding the OrangePi with our Player/Detector**.
 
-This guide also assumes you need to setup the OrangePi 5B from scratch, which means this script will be run to set up the **template SD Card**. If you need to migrate from SD card to eMMC, please refer to the **Migrate from SD Card to eMMC** section.
+- Setting up the SD Card from scratch and need to download the OS?
+
+  -> Please carefully read the **Extremely crucial OS requirements** section. Then, follow the guide in **Initial SD Card Setup** section.
+
+- Need to migrate from SD card to eMMC?
+
+  -> Please refer to the **Migrate from SD Card to eMMC** section.
+
+- Onboarding the OrangePi with our Player/Detector app?
+
+  -> Please refer to the **Post-Setup Procedures** section.
+
+- Work on existing OrangePi and need to update something?
+
+  -> Please refer to the **FAQ** section.
+
+## FAQ
+
+### I want to setup display resolution and orientation. How?
+
+Edit the `player/config/display.conf` file:
+
+```bash
+cd
+cd player/config
+nano display.conf
+```
+
+To save the file, press `Ctrl + X` then `Y` then `Enter`.
+
+### I want to update IMEI. How?
+
+```bash
+cd
+cd player/util-scripts
+./imei-change.sh
+```
+
+### I want to update the hostname. How?
+
+```bash
+cd
+cd player/util-scripts
+./hostname-change.sh
+```
+
+Make sure to:
+
+- Reboot the device after changing the hostname.
+- Go to Tailscale admin console to rename the device to match your new desired hostname.
+
+### I want to change from one release to another. How?
+
+```bash
+cd
+cd player
+./player.sh
+```
+
+### I want to sync the files from my local machine to the OrangePi. How?
+
+```bash
+cd
+cd player
+./sync.sh
+```
 
 ## Extremely crucial OS requirements
 
@@ -12,9 +77,9 @@ Some things you **must make sure**:
 
 - You **must** use the Ubuntu **Jammy GNOME** version (not xfce, not custom OS).
 
-- The SD Card must be at most **32GB** (less than the eMMC size at 64GB). If you have a 64GB SD Card, you need to shrink the partition to 32GB or less.
+- The SD Card must be at most **32GB** (less than the eMMC size at 64GB). Preferably, use a 16GB SD Card.
 
-Why? As of the time wrting this guide, only the GNOME version has **3D acceleration** enabled by OrangePi. Without 3D acceleration, the slideshow player will not work properly.
+**Why?** As of the time writing this guide, only the GNOME version has **3D acceleration** enabled by OrangePi. Without 3D acceleration, the slideshow player will not work properly.
 
 Steps to search for the OrangePi 5B OS:
 
@@ -41,18 +106,11 @@ The default username and password for the OrangePi 5B is `orangepi` and `orangep
 Multiple ways to do this:
 
 - Use a USB to transfer the files to the SD Card
-- Use the `rsync` command to transfer the files to the SD Card through the `ssh` connection. Make sure:
+- Use the script `sync.sh` to sync the files from your local machine to the SD Card. This method is recommended as it will automatically exclude unwanted folders from the sync process. Make sure:
 
   - The OrangePi 5B is connected to the internet
   - The OrangePi 5B has `ssh` enabled, by default. To double check, you can enable `ssh` either by using the Settings from the User Interface or by running the `sudo orangepi-config` command and go to `Network -> SSH`.
-  - Must be connected to the same network as the OrangePi 5B. Then, find the IP address by running the `ifconfig` command on the OrangePi 5B and replace the `<ip-adress>` with its actual IP.
-  - Run this command on your local machine at the root of this repository:
-
-  ```bash
-  rsync -av -e ssh --progress ./ orangepi@<ip-address>:/home/orangepi/player --exclude='.git/'
-  ```
-
-  Where `<ip-address>` is the IP address of the OrangePi 5B.
+  - Must be connected to the same network as the OrangePi 5B. Then, find the IP address by running the `ifconfig` command on the OrangePi 5B and use it for the `sync.sh` script.
 
 - Clone the repository directly on the OrangePi 5B.
   The same copy of this repository is also hosted on a public repository associated with Kai orangead account. However, this method is not recommended as it requires Kai to constantly update the code on GitHub, where our team is not normally working on. To clone the repository, run the following command on the OrangePi 5B:
@@ -63,13 +121,34 @@ Multiple ways to do this:
 
 ### 4. Install all the necessary packages
 
-On the OrangePi 5B, open the `Terminal` app and run the `setup.sh` script to update chromium, install Tailscale:
+On the OrangePi 5B, open the `Terminal` app and run the `setup.sh` script. It will do the following:
+
+- Update the OS packages
+- Install/Update Chromium Browser
+- Install/Update Tailscale
+- Set up the screen resolution and orientation. You can change the config inside the `player/config/display.conf` file.
 
 ```bash
 cd
 cd player
 ./setup.sh
 ```
+
+### 5. Setting up VNC (Need to be improved)
+
+`Settings -> Sharing -> Remote Desktop`
+
+- Enable `Remote Desktop`
+- Enable `Enable Legacy VNC Control` -> Change to `Require a password`
+- At `Authentication`, set the password to as you wish.
+
+### 5. Setting up Screen Keyboard (optional)
+
+This can be useful when you guys need to set up new WiFi at the destination. The screen keyboard can be enabled by:
+
+`Settings -> Accessibility -> Typing section -> Screen Keyboard`
+
+If the Screen Keyboard still not working yet, you can look for the keyboard icon on the top right corner, then click `Restart` on it. Else, just simply reboot the device.
 
 ## Migrate from SD Card to eMMC
 
@@ -87,28 +166,29 @@ Follow the guide Brown already made on Confluence to migrate the OS from the SD 
 
 ### 1. Change the device hostname
 
-The name format should be `opi<xxxx>` where `<xxxx>` is the number marked on the device. For example, if the number marked on the device is `3`, the hostname should be `opi0003`.
+The name format should be `<project><xxxx>` where:
 
-Recommended ways possible to set up the hostname:
+- `<project>` is the project name, for example `labatt`, `africa`, `arq`, etc.
+- `<xxxx>` is the number marked on the device.
 
-- Using the command line:
+For example:
+
+- If there's only a number `3` stick to the OrangePi, there's high chance it's not yet designed for any project, the hostname should be `opi0003`.
+- If the OrangePi is marked with `Labatt0006`, the hostname should be `labatt0006`.
+
+Safe way to set up the hostname:
 
 ```bash
-sudo hostnamectl set-hostname <new-hostname>
+cd
+cd player/util-scripts
+./hostname-change.sh
 ```
 
-- Using the `sudo orangepi-config` command:
+In this script, Kai already handle the lock on Chromium Web Browser profile. The script will also ask you to reboot the device after changing the hostname (recommended).
 
-```bash
-sudo orangepi-config
-Personal -> Hostname
-```
+**Note:**
 
-**Important:**
-
-1. You should always reboot the device after changing the hostname.
-2. After rebooting, open up the "Chromium Web Browser" once. It will ask you to unlock the profile that is still linked with the old hostname. Click "Unlock" and it will automatically update the profile to the new hostname.
-3. Even though the WiFi dongle will provide USB connection directly, it's a good practice to configure the WiFi broadcasted from the dongle. This will ensure that if anything not running well with the USB connection, you guys can still power the dongle on separate USB power and let the OrangePi use the WiFi. Run the `/home/orangepi/player/wifi.sh` script to update the WiFi configuration.
+- Even though the WiFi dongle will provide USB connection directly, it's a good practice to configure the WiFi broadcasted from the dongle. This will ensure that if anything not running well with the USB connection, you guys can still power the dongle on separate USB power and let the OrangePi use the WiFi. Run the `~/player/util-scripts/wifi.sh` script to update the WiFi configuration.
 
 ### 2. Setting up the Slideshow Player
 
@@ -127,13 +207,13 @@ cd player
 
 ### 3. IMEI Setup
 
-Ensure that the IMEI for the device is correctly set up. After proper configuration, the IMEI should be located in:
+To ensure that the device is properly registered to the IMEI, run the `imei-change.sh` script:
 
 ```bash
-/home/orangepi/player/<release>/dist/Documents/imei.txt
+cd
+cd player/util-scripts
+./imei-change.sh
 ```
-
-Where `<release>` is the release you chose in the previous step.
 
 ### 4. Tailscale Login
 
@@ -143,14 +223,4 @@ To connect the device via Tailscale:
 sudo tailscale up
 ```
 
-Ensure that you log into Tailscale using the account `device@orangead.ca`. Once logged in, remember to rename the device in the Tailscale admin console to match your intended device name.
-
-### 5. Adjust screen orientation
-
-If the screen is not oriented correctly, you can adjust it by going to:
-
-```bash
-Settings -> Screen Display -> Orientation
-```
-
-I used to have a script to configure the display automatically, but it's only applicable for **xfce release**. Since we are using the **GNOME/Wayland release**, the script is no longer applicable. I will do more research on this matter to better automating the process for you guys.
+Ensure that you log into Tailscale using the account `device@orangead.ca`. Once enrolled, the device is automatically registered with the same name as device's `hostname`. Remember to rename the device in the Tailscale admin console to match your intended name.

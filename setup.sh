@@ -12,14 +12,17 @@ echo "Starting system update..."
 sudo apt update && sudo apt upgrade -y
 echo "System update completed!"
 
-# Loop through each script in the setup folder and execute it
-for script in "$CURRENT_DIR"/scripts/*.sh; do
+# Loop through each script in the init folder and execute it
+for script in "$CURRENT_DIR"/init-scripts/*.sh; do
     if [ -f "$script" ] && [ -x "$script" ]; then
         echo "Running $script"
         "$script"
         echo "Finished running $script"
     fi
 done
+
+# Run display.sh in the util-scripts folder
+"$CURRENT_DIR/util-scripts/display.sh"
 
 # Handle crontab for rebooting the system every day at 3am
 echo "========== SETTING UP CRONTAB =========="
