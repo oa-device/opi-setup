@@ -4,8 +4,9 @@ After=graphical.target
 
 [Service]
 Type=simple
-User=orangepi 
-Environment=DISPLAY=:0
+User=orangepi
+Environment=WAYLAND_DISPLAY=wayland-0
+Environment=XDG_RUNTIME_DIR=/run/user/1000
 ExecStart=/bin/bash /home/orangepi/player/scripts/display.sh
 Restart=on-failure
 RestartSec=3
