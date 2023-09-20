@@ -18,6 +18,10 @@ if nmcli con add con-name "$CON_NAME" ifname wlan0 type wifi ssid "$SSID"; then
     nmcli con modify "$CON_NAME" wifi-sec.key-mgmt wpa-psk
     nmcli con modify "$CON_NAME" wifi-sec.psk "$PASSWORD"
     nmcli con modify "$CON_NAME" connection.autoconnect yes
+    
+    # Set the connection to a lower priority
+    nmcli con modify "$CON_NAME" connection.autoconnect-priority -10
+    
     echo "WiFi credentials updated with nmcli!"
 else
     echo "Failed to add new connection."

@@ -30,31 +30,29 @@ echo "========== CRONTAB SETUP COMPLETE =========="
 
 
 # Handle systemd services other than `slideshow-player.service`
-# echo "========== SETTING UP SYSTEMD SERVICES =========="
-# for service in "$CURRENT_DIR"/systemd/*.service; do
-#     if [ -f "$service" ]; then
-#         # Get the base name of the service file
-#         service_name=$(basename "$service")
-
-#         # Skip processing if the service is slideshow-player.service
-#         if [ "$service_name" != "slideshow-player.service" ]; then
-#             # Copy the service file to /etc/systemd/system/
-#             sudo cp "$service" /etc/systemd/system/
-#             # Enable and start the service
-#             sudo systemctl enable "$service_name"
-#             sudo systemctl start "$service_name"
-
-#             # Check and print the status of the service
-#             service_status=$(sudo systemctl is-active "$service_name")
-#             echo "$service_name is $service_status"
-#         else
-#             echo "Skipping $service_name"
-#         fi
-#     fi
-# done
-# echo "========== SYSTEMD SERVICES SETUP COMPLETE =========="
-
-
+echo "========== SETTING UP SYSTEMD SERVICES =========="
+for service in "$CURRENT_DIR"/systemd/*.service; do
+    if [ -f "$service" ]; then
+        # Get the base name of the service file
+        service_name=$(basename "$service")
+        
+        # Skip processing if the service is slideshow-player.service
+        if [ "$service_name" != "slideshow-player.service" ]; then
+            # Copy the service file to /etc/systemd/system/
+            sudo cp "$service" /etc/systemd/system/
+            # Enable and start the service
+            sudo systemctl enable "$service_name"
+            sudo systemctl start "$service_name"
+            
+            # Check and print the status of the service
+            service_status=$(sudo systemctl is-active "$service_name")
+            echo "$service_name is $service_status"
+        else
+            echo "Skipping $service_name"
+        fi
+    fi
+done
+echo "========== SYSTEMD SERVICES SETUP COMPLETE =========="
 
 # Setup sudo crontab to disable USB cameras on boot, to prevent the camera from being used in chromium
 # echo "========== SETTING UP SUDO CRONTAB =========="

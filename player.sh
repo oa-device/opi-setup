@@ -2,6 +2,7 @@
 
 # Get the current directory
 CURRENT_DIR=$(dirname "$(readlink -f "$0")")
+RELEASES_DIR="$CURRENT_DIR/releases"
 # Choose which directory to use
 echo "Which directory do you want to use?"
 echo "1. Production"
@@ -25,6 +26,7 @@ fi
 # Set variables
 SLIDESHOW_SCRIPT="$WORKING_DIR/dist/linux/slideshow-player"
 IMEI_FILE="$WORKING_DIR/dist/Documents/imei.txt"
+HOSTNAME=$(hostname)
 
 # Check if the directory exists
 if [[ ! -d "$WORKING_DIR" ]]; then
@@ -34,10 +36,15 @@ if [[ ! -d "$WORKING_DIR" ]]; then
     # Create the directory
     mkdir "$WORKING_DIR"
     
-    # Extract the tar.gz file by using basename
-    tar -xzf "$CURRENT_DIR/$env_name.tar.gz" -C "$WORKING_DIR"
-    
-    echo "Extracted $env_name.tar.gz to $WORKING_DIR."
+    # Extract the tar.gz file from the releases folder
+    tar_file="$RELEASES_DIR/$env_name.tar.gz"
+    if [[ -f "$tar_file" ]]; then
+        tar -xzf "$tar_file" -C "$WORKING_DIR"
+        echo "Extracted $env_name.tar.gz to $WORKING_DIR."
+    else
+        echo "Error: $tar_file not found in $RELEASES_DIR. Exiting."
+        exit 1
+    fi
 fi
 
 # Make the slideshow-player script executable if it isn't
@@ -56,10 +63,23 @@ if ! grep -qF "export DISPLAY=:0.0" "$SLIDESHOW_SCRIPT"; then
     sed -i "/chromium-browser --new-window/i export DISPLAY=:0.0" "$SLIDESHOW_SCRIPT"
     echo "Added 'export DISPLAY=:0.0' to $SLIDESHOW_SCRIPT."
 fi
-# Check if imei.txt exists in /home/orangepi/Documents
+# Check if a specific chromium-browser argument is present. If not, add all arguments
+CHROMIUM_ARGUMENTS="--no-first-run --hide-crash-restore-bubble --aggressive-cache-discard --disable-application-cache --media-cache-size=1 --disk-cache-size=1"
+if ! grep -qF "disable-application-cache" "$SLIDESHOW_SCRIPT"; then
+    sed -i "/chromium-browser --new-window/c\chromium-browser --new-window $CHROMIUM_ARGUMENTS --start-fullscreen --app=http://localhost:8080/?platform=device &" "$SLIDESHOW_SCRIPT"
+    echo "Added chromium-browser arguments to $SLIDESHOW_SCRIPT."
+fi
+
+# Check if hostname matches the format "opi<xxxx>"
+if [[ $HOSTNAME =~ ^opi[0-9]{4}$ ]]; then
+    CONTENT="$HOSTNAME"
+else
+    CONTENT="opitemplate"
+fi
+# Check if imei.txt exists in the `Documents` directory and create it if it doesn't
 if [[ ! -f "$IMEI_FILE" ]]; then
-    echo "opitemplate" > "$IMEI_FILE"
-    echo "Created $IMEI_FILE with default content."
+    echo "$CONTENT" > "$IMEI_FILE"
+    echo "Created $IMEI_FILE with content: $CONTENT."
 fi
 
 # Generate systemd service file
@@ -70,7 +90,7 @@ After=graphical.target
 
 [Service]
 Type=simple
-User=orangepi 
+User=orangepi
 Environment=DISPLAY=:0
 ExecStartPre=/bin/sleep 5
 ExecStart=$WORKING_DIR/dist/linux/slideshow-player

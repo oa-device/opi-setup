@@ -10,7 +10,7 @@ Some things you **must make sure**:
 
 - The OS you have is for the Orangepi **5B**. If you have the OS for OrangePi 5 or even the OrangePi 5 Plus, this will **not** work.
 
-- You **must** use the Ubuntu **GNOME** version (not xfce, not custom OS).
+- You **must** use the Ubuntu **Jammy GNOME** version (not xfce, not custom OS).
 
 - The SD Card must be at most **32GB** (less than the eMMC size at 64GB). If you have a 64GB SD Card, you need to shrink the partition to 32GB or less.
 
@@ -20,9 +20,13 @@ Steps to search for the OrangePi 5B OS:
 
 - Head to the [OrangePi 5B Download page](http://www.orangepi.org/html/hardWare/computerAndMicrocontrollers/service-and-support/Orange-Pi-5B.html).
 - Official Images -> Ubuntu image. Clicking on the Download will open the Google Drive where the manufacturer hosts the OS images.
-- You will see there's many options for the OS (Focal or Jammy, GNOME or xfce, etc.). Make sure you download the **GNOME** version (currently its name is **Orangepi5b_1.0.2_ubuntu_jammy_desktop_gnome_linux5.10.110.7z**)
+- You will see there's many options for the OS (Focal or Jammy, GNOME or xfce, etc.). Make sure you download the **Jammy GNOME** version (currently its name is **Orangepi5b_1.0.2_ubuntu_jammy_desktop_gnome_linux5.10.110.7z**)
 
 ## Initial SD Card Setup
+
+### Default login credentials
+
+The default username and password for the OrangePi 5B is `orangepi` and `orangepi` respectively.
 
 ### 1. Install the OS to the SD Card
 
@@ -37,18 +41,24 @@ Steps to search for the OrangePi 5B OS:
 Multiple ways to do this:
 
 - Use a USB to transfer the files to the SD Card
-- Use the `rsync` command to transfer the files to the SD Card through the `ssh` connection. Must be connected to the same network as the OrangePi 5B. The default username and password for the OrangePi 5B is `orangepi` and `orangepi` respectively.
+- Use the `rsync` command to transfer the files to the SD Card through the `ssh` connection. Make sure:
+
+  - The OrangePi 5B is connected to the internet
+  - The OrangePi 5B has `ssh` enabled, by default. To double check, you can enable `ssh` either by using the Settings from the User Interface or by running the `sudo orangepi-config` command and go to `Network -> SSH`.
+  - Must be connected to the same network as the OrangePi 5B. Then, find the IP address by running the `ifconfig` command on the OrangePi 5B and replace the `<ip-adress>` with its actual IP.
+  - Run this command on your local machine at the root of this repository:
 
   ```bash
-  rsync -av -e ssh --progress ./ orangepi@<ip-address>:/home/orangepi/player
+  rsync -av -e ssh --progress ./ orangepi@<ip-address>:/home/orangepi/player --exclude='.git/'
   ```
 
-  Where `<ip-address>` is the IP address of the OrangePi 5B. You can find the IP address by running the `ifconfig` command on the OrangePi 5B.
+  Where `<ip-address>` is the IP address of the OrangePi 5B.
 
-- Clone the repository directly on the OrangePi 5B. The same copy of this repository is also hosted on a public repository associated with Kai orangead account. To clone the repository, run the following command:
+- Clone the repository directly on the OrangePi 5B.
+  The same copy of this repository is also hosted on a public repository associated with Kai orangead account. However, this method is not recommended as it requires Kai to constantly update the code on GitHub, where our team is not normally working on. To clone the repository, run the following command on the OrangePi 5B:
 
   ```bash
-  git clone https://github.com/oa-kai/opi-setup.git
+  git clone https://github.com/oa-kai/opi-setup.git ~/player
   ```
 
 ### 4. Install all the necessary packages
@@ -110,15 +120,20 @@ cd player
 ./player.sh
 ```
 
-**Note**: By default, the slideshow player is set to run in the `prod` environment. If you need to use it for `preprod` or `staging`, please modify the script accordingly.
+**Note**:
+
+- The script will ask you to choose which release you want to use (`prod`, `preprod` or `staging`). Choose accordingly to your need.
+- Running the `player.sh` script will automatically set up the slideshow player to run on startup on the selected release. If you want to change the release, you can run the `player.sh` script again and choose a different release.
 
 ### 3. IMEI Setup
 
 Ensure that the IMEI for the device is correctly set up. After proper configuration, the IMEI should be located in:
 
 ```bash
-/home/orangepi/player/prod/dist/Documents/imei.txt
+/home/orangepi/player/<release>/dist/Documents/imei.txt
 ```
+
+Where `<release>` is the release you chose in the previous step.
 
 ### 4. Tailscale Login
 
@@ -138,4 +153,4 @@ If the screen is not oriented correctly, you can adjust it by going to:
 Settings -> Screen Display -> Orientation
 ```
 
-I used to have a script to configure the display automatically, but it's only applicable for **xfce release**. Since we are using the **GNOME/Wayland release**, the script is no longer applicable. I will do more research on this matter to better automating the process for you guys./
+I used to have a script to configure the display automatically, but it's only applicable for **xfce release**. Since we are using the **GNOME/Wayland release**, the script is no longer applicable. I will do more research on this matter to better automating the process for you guys.
