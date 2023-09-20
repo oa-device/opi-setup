@@ -27,6 +27,10 @@ fi
 SLIDESHOW_SCRIPT="$WORKING_DIR/dist/linux/slideshow-player"
 IMEI_FILE="$WORKING_DIR/dist/Documents/imei.txt"
 HOSTNAME=$(hostname)
+LOGS_DIR="$CURRENT_DIR/logs"
+
+# Create logs directory if it doesn't exist
+mkdir -p "$LOGS_DIR"
 
 # Check if the directory exists
 if [[ ! -d "$WORKING_DIR" ]]; then
