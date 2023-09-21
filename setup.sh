@@ -7,10 +7,21 @@ CURRENT_DIR=$(dirname "$(readlink -f "$0")")
 LOGS_DIR="$CURRENT_DIR/logs"
 mkdir -p "$LOGS_DIR"
 
+# Change default password
+echo "orangepi:orangead" | sudo chpasswd
+
+# Set timezone to Montreal
+echo "========== SETTING TIMEZONE TO MONTREAL =========="
+sudo timedatectl set-timezone America/Montreal
+# Check current timezone
+echo "Current timezone set to: $(timedatectl | grep "Time zone" | awk '{print $3}')"
+echo "========== TIMEZONE SETTING COMPLETE =========="
+
 # Update and Upgrade
-echo "Starting system update..."
-sudo apt update && sudo apt upgrade -y
-echo "System update completed!"
+echo "========== UPDATING SYSTEM =========="
+sudo apt update
+sudo apt upgrade -y
+echo "========== SYSTEM UPDATE COMPLETE =========="
 
 # Loop through each script in the init folder and execute it
 for script in "$CURRENT_DIR"/init-scripts/*.sh; do
@@ -30,7 +41,6 @@ echo "0 3 * * * /sbin/reboot" | crontab -
 echo "Current crontab entries:"
 crontab -l
 echo "========== CRONTAB SETUP COMPLETE =========="
-
 
 # Handle systemd services other than `slideshow-player.service`
 echo "========== SETTING UP SYSTEMD SERVICES =========="
@@ -56,6 +66,30 @@ for service in "$CURRENT_DIR"/systemd/*.service; do
     fi
 done
 echo "========== SYSTEMD SERVICES SETUP COMPLETE =========="
+
+# Handle GNOME settings
+echo "========== SETTING UP GSETTINGS =========="
+# Turn off Bluetooth by default
+rfkill block bluetooth
+gsettings set org.blueman.plugins.powermanager auto-power-on false
+# Check if Bluetooth is off
+bluetooth_status=$(rfkill list bluetooth | grep -c "Soft blocked: yes")
+if [ "$bluetooth_status" -gt 0 ]; then
+    echo "Bluetooth is off"
+else
+    echo "Bluetooth is on"
+fi
+
+# Enable Remote Desktop (TODO)
+
+# Setting up Screen Keyboard
+gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true
+
+# Power control: Disable Dim Screen, set Screen Blank to Never
+gsettings set org.gnome.settings-daemon.plugins.power idle-dim false
+gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 0
+gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 0
+echo "========== GSETTINGS SETUP COMPLETE =========="
 
 # Setup sudo crontab to disable USB cameras on boot, to prevent the camera from being used in chromium
 # echo "========== SETTING UP SUDO CRONTAB =========="
