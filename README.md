@@ -32,6 +32,14 @@ nano display.conf
 
 To save the file, press `Ctrl + X` then `Y` then `Enter`.
 
+For simplicity, just reboot the machine after changing the display config. Else, you can run the `player/util-scripts/display.sh` script to apply the changes without rebooting:
+
+```bash
+cd
+cd player/util-scripts
+./display.sh
+```
+
 ### I want to update IMEI. How?
 
 ```bash
@@ -123,10 +131,18 @@ Multiple ways to do this:
 
 On the OrangePi 5B, open the `Terminal` app and run the `setup.sh` script. It will do the following:
 
+- Change default user password
+- Set up timezone to Montreal
 - Update the OS packages
 - Install/Update Chromium Browser
 - Install/Update Tailscale
-- Set up the screen resolution and orientation. You can change the config inside the `player/config/display.conf` file.
+- Install/Update Unclutter (to autohide the mouse cursor)
+- Set up the screen resolution and orientation.
+- Make the OrangePi auto-reboot at 3AM everyday
+- Change GNOME Settings:
+  - Disable Bluetooth
+  - Enable Screen Keyboard
+  - Disable Screen Lock
 
 ```bash
 cd
@@ -140,9 +156,12 @@ cd player
 
 - Enable `Remote Desktop`
 - Enable `Enable Legacy VNC Control` -> Change to `Require a password`
+- Enable `Remote Control`
 - At `Authentication`, set the password to as you wish.
 
-### 5. Setting up Screen Keyboard (optional)
+On your local machine, the only VNC client that works for me is the `TigerVNC` on MacOS. Haven't tried on Windows/Linux yet.
+
+### 6. Setting up Screen Keyboard (optional)
 
 This can be useful when you guys need to set up new WiFi at the destination. The screen keyboard can be enabled by:
 
