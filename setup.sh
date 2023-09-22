@@ -1,102 +1,101 @@
 #!/bin/bash
 
-# Get the current directory
+# Initialize the current directory
 CURRENT_DIR=$(dirname "$(readlink -f "$0")")
 
-# Create logs directory if it doesn't exist
+# Directories
 LOGS_DIR="$CURRENT_DIR/logs"
 mkdir -p "$LOGS_DIR"
 
-# Change default password
+# Function to print section headers for clarity
+print_section() {
+    echo -e "\n\e[1;33m========== $1 ==========\e[0m"
+}
+
+# Change the default password
+print_section "CHANGING DEFAULT PASSWORD"
 echo "orangepi:orangead" | sudo chpasswd
 
-# Set timezone to Montreal
-echo "========== SETTING TIMEZONE TO MONTREAL =========="
+# Configure timezone settings
+print_section "SETTING TIMEZONE TO MONTREAL"
 sudo timedatectl set-timezone America/Montreal
-# Check current timezone
 echo "Current timezone set to: $(timedatectl | grep "Time zone" | awk '{print $3}')"
-echo "========== TIMEZONE SETTING COMPLETE =========="
 
-# Update and Upgrade
-echo "========== UPDATING SYSTEM =========="
+# Update and Upgrade system packages
+print_section "UPDATING SYSTEM"
 sudo apt update
 sudo apt upgrade -y
-echo "========== SYSTEM UPDATE COMPLETE =========="
 
-# Loop through each script in the init folder and execute it
+# Execute initialization scripts from the init-scripts directory
+print_section "RUNNING INIT SCRIPTS"
 for script in "$CURRENT_DIR"/init-scripts/*.sh; do
     if [ -f "$script" ] && [ -x "$script" ]; then
-        echo "Running $script"
+        echo "Executing $script..."
         "$script"
-        echo "Finished running $script"
     fi
 done
 
-# Run display.sh in the util-scripts folder
+# Execute the display configuration script
+print_section "CONFIGURING DISPLAY"
 "$CURRENT_DIR/util-scripts/display.sh"
 
-# Handle crontab for rebooting the system every day at 3am
-echo "========== SETTING UP CRONTAB =========="
-echo "0 3 * * * /sbin/reboot" | crontab -
-echo "Current crontab entries:"
-crontab -l
-echo "========== CRONTAB SETUP COMPLETE =========="
+# Configure the wifi
+print_section "CONFIGURING WIFI"
+"$CURRENT_DIR/util-scripts/wifi.sh"
 
-# Handle systemd services other than `slideshow-player.service`
-echo "========== SETTING UP SYSTEMD SERVICES =========="
+# Schedule a daily reboot via crontab
+print_section "SETTING UP DAILY REBOOT AT 3AM"
+echo "0 3 * * * /sbin/reboot" | crontab -
+crontab -l
+
+# Setup systemd services (excluding slideshow-player.service)
+print_section "SETTING UP SYSTEMD SERVICES"
 for service in "$CURRENT_DIR"/systemd/*.service; do
     if [ -f "$service" ]; then
-        # Get the base name of the service file
         service_name=$(basename "$service")
         
-        # Skip processing if the service is slideshow-player.service
         if [ "$service_name" != "slideshow-player.service" ]; then
-            # Copy the service file to /etc/systemd/system/
             sudo cp "$service" /etc/systemd/system/
-            # Enable and start the service
             sudo systemctl enable "$service_name"
             sudo systemctl start "$service_name"
-            
-            # Check and print the status of the service
-            service_status=$(sudo systemctl is-active "$service_name")
-            echo "$service_name is $service_status"
+            echo "$service_name is $(sudo systemctl is-active "$service_name")"
         else
             echo "Skipping $service_name"
         fi
     fi
 done
-echo "========== SYSTEMD SERVICES SETUP COMPLETE =========="
 
-# Handle GNOME settings
-echo "========== SETTING UP GSETTINGS =========="
-# Turn off Bluetooth by default
+# Configure GNOME settings
+print_section "CONFIGURING GNOME SETTINGS"
+
+# Disable Bluetooth by default
 rfkill block bluetooth
 gsettings set org.blueman.plugins.powermanager auto-power-on false
-# Check if Bluetooth is off
 bluetooth_status=$(rfkill list bluetooth | grep -c "Soft blocked: yes")
-if [ "$bluetooth_status" -gt 0 ]; then
-    echo "Bluetooth is off"
-else
-    echo "Bluetooth is on"
-fi
+[ "$bluetooth_status" -gt 0 ] && echo "Bluetooth is off" || echo "Bluetooth is on"
 
-# Enable Remote Desktop (TODO)
+# TODO: Enable Remote Desktop and VNC
+# grdctl rdp enable
+# grdctl rdp set-credentials orangepi orangead
+# grdctl rdp disable-view-only
+# grdctl vnc enable
+# grdctl vnc set-auth-method password
+# grdctl vnc set-password orangead
+# grdctl vnc disable-view-only
+# grdctl status --show-credentials
 
-# Setting up Screen Keyboard
+# Configure the on-screen keyboard settings
 gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true
 
-# Power control: Disable Dim Screen, set Screen Blank to Never
+# Configure power settings to prevent screen dimming and blanking
 gsettings set org.gnome.settings-daemon.plugins.power idle-dim false
 gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 0
 gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 0
-echo "========== GSETTINGS SETUP COMPLETE =========="
 
-# Setup sudo crontab to disable USB cameras on boot, to prevent the camera from being used in chromium
-# echo "========== SETTING UP SUDO CRONTAB =========="
+# NOTE: If you wish to enable the sudo crontab configuration later, uncomment the lines below.
+# print_section "SETTING UP SUDO CRONTAB TO DISABLE USB CAMERAS ON BOOT"
 # echo "@reboot sleep 3 && /bin/chmod 000 /dev/video0 && /bin/chmod 000 /dev/video1" | sudo crontab -
-# echo "Current sudo crontab entries:"
 # sudo crontab -l
-# echo "========== SUDO CRONTAB SETUP COMPLETE =========="
 
-echo
-echo "Setup completed!"
+print_section "SETUP COMPLETED"
+
