@@ -1,88 +1,85 @@
 #!/bin/bash
 
-# Get the current directory
-CURRENT_DIR=$(dirname "$(readlink -f "$0")")
-RELEASES_DIR="$CURRENT_DIR/releases"
-# Choose which directory to use
-echo "Which directory do you want to use?"
-echo "1. Production"
-echo "2. Pre-production"
-echo "3. Staging"
-read -p "Enter your choice (1-3): " choice
-# Set the directory based on the choice
-if [[ $choice == 1 ]]; then
-    WORKING_DIR="$CURRENT_DIR/prod"
-    elif [[ $choice == 2 ]]; then
-    WORKING_DIR="$CURRENT_DIR/preprod"
-    elif [[ $choice == 3 ]]; then
-    WORKING_DIR="$CURRENT_DIR/staging"
-else
-    echo "Invalid choice. Exiting."
-    exit 1
-fi
+# Functions
+prompt_for_directory_choice() {
+    echo "Which directory do you want to use?"
+    echo "1. Production"
+    echo "2. Pre-production"
+    echo "3. Staging"
+    read -p "Enter your choice (1-3): " choice
+    case $choice in
+        1) WORKING_DIR="$CURRENT_DIR/prod";;
+        2) WORKING_DIR="$CURRENT_DIR/preprod";;
+        3) WORKING_DIR="$CURRENT_DIR/staging";;
+        *) echo "Invalid choice. Exiting."; exit 1;;
+    esac
+}
 
-# Set variables
-HOSTNAME=$(hostname)
-SLIDESHOW_SCRIPT="$WORKING_DIR/dist/linux/slideshow-player"
-IMEI_FILE="$WORKING_DIR/dist/Documents/imei.txt"
-LOGS_DIR="$CURRENT_DIR/logs"
-
-# Create logs directory if it doesn't exist
-mkdir -p "$LOGS_DIR"
-
-# Check if the directory exists
-if [[ ! -d "$WORKING_DIR" ]]; then
-    env_name=$(basename "$WORKING_DIR")
-    echo "Directory $env_name does not exist. Extracting."
-    
-    # Create the directory
-    mkdir "$WORKING_DIR"
-    
-    # Extract the tar.gz file from the releases folder
-    tar_file="$RELEASES_DIR/$env_name.tar.gz"
-    if [[ -f "$tar_file" ]]; then
-        tar -xzf "$tar_file" -C "$WORKING_DIR"
-        echo "Extracted $env_name.tar.gz to $WORKING_DIR."
+extract_release_file() {
+    local RELEASE_FILE="$RELEASES_DIR/$ENV_NAME.tar.gz"
+    if [[ -f "$RELEASE_FILE" ]]; then
+        mkdir "$WORKING_DIR"
+        tar -xzf "$RELEASE_FILE" -C "$WORKING_DIR"
+        echo "Extracted $ENV_NAME.tar.gz to $WORKING_DIR."
     else
-        echo "Error: $tar_file not found in $RELEASES_DIR. Exiting."
+        echo "Error: $RELEASE_FILE not found in $RELEASES_DIR. Exiting."
         exit 1
     fi
-fi
+}
 
-# Make the slideshow-player script executable if it isn't
-if [[ ! -x "$SLIDESHOW_SCRIPT" ]]; then
-    chmod +x "$SLIDESHOW_SCRIPT"
-    echo "Made slideshow-player script executable."
-fi
-# Check if google-chrome-stable is mentioned in the script and replace with chromium-browser
-if grep -qF "google-chrome-stable" "$SLIDESHOW_SCRIPT"; then
-    sed -i 's/google-chrome-stable/chromium-browser/g' "$SLIDESHOW_SCRIPT"
-    echo "Replaced google-chrome-stable with chromium-browser in $SLIDESHOW_SCRIPT."
-fi
-# Check if "export DISPLAY=:0.0" is in the script and if not, add it
-if ! grep -qF "export DISPLAY=:0.0" "$SLIDESHOW_SCRIPT"; then
-    # Inserting the export line before launching chromium-browser.
-    sed -i "/chromium-browser --new-window/i export DISPLAY=:0.0" "$SLIDESHOW_SCRIPT"
-    echo "Added 'export DISPLAY=:0.0' to $SLIDESHOW_SCRIPT."
-fi
-# Check if a specific chromium-browser argument is present. If not, add all arguments
+update_slideshow_script() {
+    [[ ! -x "$SLIDESHOW_SCRIPT" ]] && chmod +x "$SLIDESHOW_SCRIPT" && echo "Made slideshow-player script executable"
+    
+    grep -qF "google-chrome-stable" "$SLIDESHOW_SCRIPT" && sed -i 's/google-chrome-stable/chromium-browser/g' "$SLIDESHOW_SCRIPT" && echo "Replaced google-chrome-stable with chromium-browser in $SLIDESHOW_SCRIPT"
+    
+    grep -qF "export DISPLAY=:0.0" "$SLIDESHOW_SCRIPT" || { sed -i "/chromium-browser --new-window/i export DISPLAY=:0.0" "$SLIDESHOW_SCRIPT"; echo "Added 'export DISPLAY=:0.0' to $SLIDESHOW_SCRIPT"; }
+    
+    grep -qF "disable-application-cache" "$SLIDESHOW_SCRIPT" || { sed -i "/chromium-browser --new-window/c\chromium-browser --new-window $CHROMIUM_ARGUMENTS --start-fullscreen --app=http://localhost:8080/?platform=device &" "$SLIDESHOW_SCRIPT"; echo "Added chromium-browser arguments to $SLIDESHOW_SCRIPT"; }
+}
+
+generate_imei_file() {
+    local CURRENT_IMEI="$HOSTNAME"
+    
+    # Using a combination of text effects to make the prompt stand out
+    echo -e "\n\e[1;33m=================================================="
+    echo -e "IMPORTANT: IMEI CONFIGURATION"
+    echo -e "=================================================="
+    echo -e "Current IMEI is set to: \e[1;31m$CURRENT_IMEI\e[0m."
+    echo -e "\e[1;32mIf needed, please provide a new IMEI (press Enter to keep the current one).\e[0m"
+    
+    read -p "Enter a new IMEI: " NEW_IMEI
+    
+    # If the user doesn't input a new IMEI, keep the current one.
+    [[ -z "$NEW_IMEI" ]] && NEW_IMEI="$CURRENT_IMEI"
+    
+    echo "$NEW_IMEI" > "$IMEI_FILE"
+    echo -e "IMEI set to: \e[1;31m$NEW_IMEI\e[0m in $IMEI_FILE"
+    echo -e "\e[1;33m==================================================\e[0m\n"
+}
+
+# Main Execution
+HOSTNAME=$(hostname)
+CURRENT_DIR=$(dirname "$(readlink -f "$0")")
+RELEASES_DIR="$CURRENT_DIR/releases"
+LOGS_DIR="$CURRENT_DIR/logs"
+mkdir -p "$LOGS_DIR"
+
+prompt_for_directory_choice
+
+ENV_NAME=$(basename "$WORKING_DIR")
+SLIDESHOW_SCRIPT="$WORKING_DIR/dist/linux/slideshow-player"
+IMEI_FILE="$WORKING_DIR/dist/Documents/imei.txt"
 CHROMIUM_ARGUMENTS="--no-first-run --hide-crash-restore-bubble --aggressive-cache-discard --disable-application-cache --media-cache-size=1 --disk-cache-size=1"
-if ! grep -qF "disable-application-cache" "$SLIDESHOW_SCRIPT"; then
-    sed -i "/chromium-browser --new-window/c\chromium-browser --new-window $CHROMIUM_ARGUMENTS --start-fullscreen --app=http://localhost:8080/?platform=device &" "$SLIDESHOW_SCRIPT"
-    echo "Added chromium-browser arguments to $SLIDESHOW_SCRIPT."
-fi
 
-# Check if hostname ends with a 4-digit number
-if [[ $HOSTNAME =~ [0-9]{4}$ ]]; then
-    CONTENT="$HOSTNAME"
-else
-    CONTENT="opitemplate"
-fi
-# Check if imei.txt exists in the `Documents` directory and create it if it doesn't
-if [[ ! -f "$IMEI_FILE" ]]; then
-    echo "$CONTENT" > "$IMEI_FILE"
-    echo "Created $IMEI_FILE with content: $CONTENT."
-fi
+# Remove existing directory and extract the new release
+[[ -d "$WORKING_DIR" ]] && rm -rf "$WORKING_DIR" && echo "Removed existing $ENV_NAME directory."
+extract_release_file
+
+# Slideshow script updates
+update_slideshow_script
+
+# Generate IMEI file
+generate_imei_file
 
 # Call the release-change script
 "$CURRENT_DIR/util-scripts/release-change.sh" "$choice"

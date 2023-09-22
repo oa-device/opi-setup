@@ -4,11 +4,10 @@ echo "========== SETTING UP DISPLAY =========="
 
 # Dynamically get the current directory of the script
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-# config file is at ../config/display.conf. Find a way to get the absolute path of the config file
-CONFIG_FILE="$(dirname "$CURRENT_DIR")/config/display.conf"
+DISPLAY_CONFIG_FILE="$(dirname "$CURRENT_DIR")/config/display.conf"
 
 # Read values from config file
-source "$CONFIG_FILE"
+source "$DISPLAY_CONFIG_FILE"
 
 # Check if the display is connected and retrieve its name
 DISPLAY_NAME=$(/usr/bin/python3 "${CURRENT_DIR}/gnome-randr.py" --current 2>/dev/null | awk '/associated physical monitors:/{getline; print $1; exit}')

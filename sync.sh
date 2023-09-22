@@ -19,12 +19,18 @@ if [ -n "$USERNAME" ] && [ -n "$IP" ]; then
     # Set the destination path
     DEST="$USERNAME@$IP:$DEFAULT_DEST_DIR"
     
-    # Run the rsync command
+    # Run the rsync command with --delete option and exclusions
     rsync -av -e ssh --progress \
+    --delete \
     --exclude='.DS_Store' \
     --exclude='.git/' \
     --exclude='.gitignore' \
     --exclude='sync.sh' \
+    --exclude='prod/' \
+    --exclude='preprod/' \
+    --exclude='staging/' \
+    --exclude='logs/display_setup.log' \
+    --exclude='logs/slideshow_log.log' \
     "$DIR/" "$DEST"
 else
     echo "Both username and IP must be provided!"
