@@ -24,7 +24,7 @@ echo "Current timezone set to: $(timedatectl | grep "Time zone" | awk '{print $3
 # Update and Upgrade system packages
 print_section "UPDATING SYSTEM"
 sudo apt update
-sudo apt upgrade -y
+sudo apt upgrade --fix-missing -y
 
 # Execute initialization scripts from the init-scripts directory
 print_section "RUNNING INIT SCRIPTS"
