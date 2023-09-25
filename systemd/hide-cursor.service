@@ -1,0 +1,16 @@
+[Unit]
+Description=Hide the X cursor after a period of inactivity
+After=graphical.target
+
+[Service]
+Type=simple
+User=orangepi
+Environment=DISPLAY=:0
+ExecStart=/usr/bin/unclutter -idle 2 -root
+Restart=on-failure
+RestartSec=5
+StandardOutput=file:/home/orangepi/player/logs/hide_cursor.log
+StandardError=file:/home/orangepi/player/logs/hide_cursor.log
+
+[Install]
+WantedBy=graphical.target
