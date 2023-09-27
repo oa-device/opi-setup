@@ -20,6 +20,16 @@ This guide will walk you through steps to **set up the template SD Card**, then 
 
 ## FAQ
 
+### How to install the Player/Detector app?
+
+Quick way:
+
+```bash
+git clone https://github.com/oa-kai/opi-setup.git ~/player
+```
+
+Detail can be found at **Migrate the all the scripts to the SD Card** section.
+
 ### I want to setup display resolution and orientation. How?
 
 Edit the `player/config/display.conf` file:
@@ -56,17 +66,14 @@ cd player/util-scripts
 ./hostname-change.sh
 ```
 
-Make sure to:
-
-- Reboot the device after changing the hostname.
-- Go to Tailscale admin console to rename the device to match your new desired hostname.
+Make sure to reboot the device after changing the hostname.
 
 ### I want to change from one release to another. How?
 
 ```bash
 cd
 cd player
-./player.sh
+./player-config.sh
 ```
 
 ### I want to sync the files from my local machine to the OrangePi. How?

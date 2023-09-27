@@ -4,7 +4,7 @@ echo "========== SETTING UP WIFI =========="
 
 # Get the directory of the current script and find the config file
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-WIFI_CONFIG_FILE="$(dirname "$CURRENT_DIR")/config//wifi.conf"
+WIFI_CONFIG_FILE="$(dirname "$CURRENT_DIR")/config/wifi.conf"
 
 # Default values
 SSID="orangead_wifi"
@@ -31,12 +31,24 @@ if nmcli con add con-name "$CON_NAME" ifname wlan0 type wifi ssid "$SSID"; then
     nmcli con modify "$CON_NAME" wifi-sec.psk "$PASSWORD"
     nmcli con modify "$CON_NAME" connection.autoconnect yes
     
-    # Set the connection to the highest priority
+    # Set the WiFi connection to the highest priority
     nmcli con modify "$CON_NAME" connection.autoconnect-priority 999
     
     echo "WiFi credentials updated with nmcli!"
 else
     echo "Failed to add new connection."
 fi
+
+# Lower the priority of all Ethernet connections starting with "Wired connection"
+echo "========== SETTING UP ETHERNET PRIORITY =========="
+
+# Loop through each "Wired connection" and set their metric higher than WiFi
+while IFS= read -r ETH_CON_NAME; do
+    if [[ ! -z "$ETH_CON_NAME" ]]; then
+        nmcli con modify "$ETH_CON_NAME" ipv4.route-metric 700
+        nmcli con modify "$ETH_CON_NAME" ipv6.route-metric 700
+        echo "Lowered priority for Ethernet connection: $ETH_CON_NAME"
+    fi
+done < <(nmcli -t -f NAME con show | grep "^Wired connection")
 
 echo "========== WIFI SETUP COMPLETE =========="
