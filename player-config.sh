@@ -37,34 +37,24 @@ update_slideshow_script() {
     grep -qF "disable-application-cache" "$SLIDESHOW_SCRIPT" || { sed -i "/chromium-browser --new-window/c\chromium-browser --new-window $CHROMIUM_ARGUMENTS --start-fullscreen --app=http://localhost:8080/?platform=device &" "$SLIDESHOW_SCRIPT"; echo "Added chromium-browser arguments to $SLIDESHOW_SCRIPT"; }
 }
 
-configure_hostname_and_imei() {
+generate_imei_file() {
     local CURRENT_IMEI="$HOSTNAME"
-    local CHANGED_HOSTNAME=0
     
     # Using a combination of text effects to make the prompt stand out
     echo -e "\n\e[1;33m=================================================="
-    echo -e "IMPORTANT: HOSTNAME & IMEI CONFIGURATION"
+    echo -e "IMPORTANT: IMEI CONFIGURATION"
     echo -e "=================================================="
-    echo -e "Current HOSTNAME/IMEI is set to: \e[1;31m$CURRENT_IMEI\e[0m."
-    echo -e "\e[1;32mIf needed, please provide a new HOSTNAME/IMEI (press Enter to keep the current one).\e[0m"
+    echo -e "Current IMEI is set to: \e[1;31m$CURRENT_IMEI\e[0m."
+    echo -e "\e[1;32mIf needed, please provide a new IMEI (press Enter to keep the current one).\e[0m"
     
-    read -p "Enter a new HOSTNAME/IMEI: " NEW_HOSTNAME_IMEI
+    read -p "Enter a new IMEI: " NEW_IMEI
     
-    # If the user inputs a new HOSTNAME/IMEI, update the hostname
-    if [[ ! -z "$NEW_HOSTNAME_IMEI" ]]; then
-        sudo hostnamectl set-hostname "$NEW_HOSTNAME_IMEI"
-        pkill chromium
-        rm -rf /home/orangepi/.config/chromium/Singleton*
-        CHANGED_HOSTNAME=1
-        CURRENT_IMEI="$NEW_HOSTNAME_IMEI"
-    fi
+    # If the user doesn't input a new IMEI, keep the current one.
+    [[ -z "$NEW_IMEI" ]] && NEW_IMEI="$CURRENT_IMEI"
     
-    echo "$CURRENT_IMEI" > "$IMEI_FILE"
-    echo -e "HOSTNAME set to: \e[1;31m$CURRENT_IMEI\e[0m"
-    echo -e "IMEI set to: \e[1;31m$CURRENT_IMEI\e[0m in $IMEI_FILE"
+    echo "$NEW_IMEI" > "$IMEI_FILE"
+    echo -e "IMEI set to: \e[1;31m$NEW_IMEI\e[0m in $IMEI_FILE"
     echo -e "\e[1;33m==================================================\e[0m\n"
-    
-    return $CHANGED_HOSTNAME
 }
 
 # Main Execution
@@ -88,22 +78,10 @@ extract_release_file
 # Slideshow script updates
 update_slideshow_script
 
-REBOOT_REQUIRED=0
-# Configure Hostname and IMEI
-configure_hostname_and_imei
-REBOOT_REQUIRED=$?
+# Generate IMEI file
+generate_imei_file
 
 # Call the release-change script
 "$CURRENT_DIR/util-scripts/release-change.sh" "$choice"
-
-if [[ $REBOOT_REQUIRED -eq 1 ]]; then
-    read -p "A reboot is required due to hostname change. Do you want to reboot now? (Y/n): " reboot_response
-    reboot_response=${reboot_response:-y}
-    if [[ $reboot_response =~ ^[Yy]$ ]]; then
-        sudo reboot
-    else
-        echo "Please remember to reboot manually later."
-    fi
-fi
 
 echo "Setup complete."

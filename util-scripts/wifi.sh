@@ -6,16 +6,21 @@ echo "========== SETTING UP WIFI =========="
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 WIFI_CONFIG_FILE="$(dirname "$CURRENT_DIR")/config/wifi.conf"
 
-# Default values
-SSID="orangead_wifi"
-PASSWORD="orangead_wifi"
-CON_NAME="OrangeAd_Debug_Wifi"
+# Default fallback values
+DEFAULT_SSID="orangead_wifi"
+DEFAULT_PASSWORD="orangead_wifi"
+DEFAULT_CON_NAME="OrangeAd_Debug_Wifi"
+DEFAULT_CONNECTION_PRIORITY=999
 
-# If the config file exists, source it to get SSID and PASSWORD
+# If the config file exists, source it to get values. Otherwise, use default values.
 if [[ -f $WIFI_CONFIG_FILE ]]; then
     source "$WIFI_CONFIG_FILE"
 else
-    echo "Using default WiFi credentials as configuration file not found!"
+    echo "Using default settings as configuration file not found!"
+    SSID=$DEFAULT_SSID
+    PASSWORD=$DEFAULT_PASSWORD
+    CON_NAME=$DEFAULT_CON_NAME
+    CONNECTION_PRIORITY=$DEFAULT_CONNECTION_PRIORITY
 fi
 
 echo "Updating WiFi Credentials with nmcli..."
@@ -31,8 +36,8 @@ if nmcli con add con-name "$CON_NAME" ifname wlan0 type wifi ssid "$SSID"; then
     nmcli con modify "$CON_NAME" wifi-sec.psk "$PASSWORD"
     nmcli con modify "$CON_NAME" connection.autoconnect yes
     
-    # Set the WiFi connection to the highest priority
-    nmcli con modify "$CON_NAME" connection.autoconnect-priority 999
+    # Set the WiFi connection to the given priority from config
+    nmcli con modify "$CON_NAME" connection.autoconnect-priority $CONNECTION_PRIORITY
     
     echo "WiFi credentials updated with nmcli!"
 else
