@@ -21,20 +21,6 @@ print_section "SETTING TIMEZONE TO MONTREAL"
 sudo timedatectl set-timezone America/Montreal
 echo "Current timezone set to: $(timedatectl | grep "Time zone" | awk '{print $3}')"
 
-# Update and Upgrade system packages
-print_section "UPDATING SYSTEM"
-sudo apt update
-sudo apt upgrade --fix-missing -y
-
-# Execute initialization scripts from the init-scripts directory
-print_section "RUNNING INIT SCRIPTS"
-for script in "$CURRENT_DIR"/init-scripts/*.sh; do
-    if [ -f "$script" ] && [ -x "$script" ]; then
-        echo "Executing $script..."
-        "$script"
-    fi
-done
-
 # Execute the display configuration script
 print_section "CONFIGURING DISPLAY"
 "$CURRENT_DIR/util-scripts/display.sh"
@@ -68,6 +54,9 @@ done
 # Configure GNOME settings
 print_section "CONFIGURING GNOME SETTINGS"
 
+# Disable the Update Notifier
+gsettings set com.ubuntu.update-notifier no-show-notifications true
+
 # Disable Bluetooth by default
 rfkill block bluetooth
 gsettings set org.blueman.plugins.powermanager auto-power-on false
@@ -92,10 +81,19 @@ gsettings set org.gnome.settings-daemon.plugins.power idle-dim false
 gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 0
 gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 0
 
-# NOTE: If you wish to enable the sudo crontab configuration later, uncomment the lines below.
-# print_section "SETTING UP SUDO CRONTAB TO DISABLE USB CAMERAS ON BOOT"
-# echo "@reboot sleep 3 && /bin/chmod 000 /dev/video0 && /bin/chmod 000 /dev/video1" | sudo crontab -
-# sudo crontab -l
+# Update and Upgrade system packages
+print_section "UPDATING SYSTEM"
+sudo apt update
+sudo apt upgrade --fix-missing -y
+
+# Execute initialization scripts from the init-scripts directory
+print_section "RUNNING INIT SCRIPTS"
+for script in "$CURRENT_DIR"/init-scripts/*.sh; do
+    if [ -f "$script" ] && [ -x "$script" ]; then
+        echo "Executing $script..."
+        "$script"
+    fi
+done
 
 print_section "SETUP COMPLETED"
 
