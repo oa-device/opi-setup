@@ -57,6 +57,24 @@ generate_imei_file() {
     echo -e "\e[1;33m==================================================\e[0m\n"
 }
 
+grant_chromium_camera_access() {
+    PREFERENCES_FILE="$HOME/.config/chromium/Default/Preferences"
+    
+    # Ensure that the chromium-browser is not running when modifying this file.
+    pkill chromium
+
+    if [[ -f "$PREFERENCES_FILE" ]]; then
+        # Backup the original Preferences file.
+        cp "$PREFERENCES_FILE" "${PREFERENCES_FILE}.backup"
+
+        # Use jq to set camera permission for localhost:8080 without last_modified
+        jq '.profile.content_settings.exceptions.media_stream_camera += {"http://localhost:8080,*": {"setting": 1}}' "$PREFERENCES_FILE" > "${PREFERENCES_FILE}.tmp" && mv "${PREFERENCES_FILE}.tmp" "$PREFERENCES_FILE"
+        echo "Granted camera permission for localhost:8080 in $PREFERENCES_FILE"
+    else
+        echo "Chromium Preferences file not found. Make sure chromium-browser has been run at least once."
+    fi
+}
+
 # Main Execution
 HOSTNAME=$(hostname)
 CURRENT_DIR=$(dirname "$(readlink -f "$0")")
@@ -77,6 +95,9 @@ extract_release_file
 
 # Slideshow script updates
 update_slideshow_script
+
+# Grant chromium-browser camera access for localhost:8080
+grant_chromium_camera_access
 
 # Generate IMEI file
 generate_imei_file
