@@ -2,47 +2,59 @@
 
 echo "========== SETTING UP WIFI =========="
 
-# Get the directory of the current script and find the config file
-CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-WIFI_CONFIG_FILE="$(dirname "$CURRENT_DIR")/config/wifi.conf"
-
-# Default fallback values
+# Default wifi settings
 DEFAULT_SSID="orangead_wifi"
 DEFAULT_PASSWORD="orangead_wifi"
 DEFAULT_CON_NAME="OrangeAd_Debug_Wifi"
 DEFAULT_CONNECTION_PRIORITY=999
 
-# If the config file exists, source it to get values. Otherwise, use default values.
-if [[ -f $WIFI_CONFIG_FILE ]]; then
-    source "$WIFI_CONFIG_FILE"
+# Function to create or update a WiFi connection
+create_or_update_wifi() {
+    local ssid="$1"
+    local password="$2"
+    local con_name="$3"
+    local priority="$4"
+
+    # Check if the connection already exists, if it does, delete it
+    if nmcli con show | grep -q "$con_name"; then
+        nmcli con delete "$con_name"
+    fi
+
+    # Add a new connection with the provided credentials
+    if nmcli con add con-name "$con_name" ifname wlan0 type wifi ssid "$ssid"; then
+        nmcli con modify "$con_name" wifi-sec.key-mgmt wpa-psk
+        nmcli con modify "$con_name" wifi-sec.psk "$password"
+        nmcli con modify "$con_name" connection.autoconnect yes
+        nmcli con modify "$con_name" connection.autoconnect-priority "$priority"
+        echo "WiFi credentials updated for $con_name"
+    else
+        echo "Failed to add new connection for $con_name."
+    fi
+}
+
+# Check and setup default WiFi connection
+echo "Checking for default WiFi connection..."
+create_or_update_wifi "$DEFAULT_SSID" "$DEFAULT_PASSWORD" "$DEFAULT_CON_NAME" "$DEFAULT_CONNECTION_PRIORITY"
+
+# List available SSIDs and allow user to choose
+echo "Available WiFi networks:"
+nmcli dev wifi | awk '{print NR-1 " - " $0}' | tail -n +2
+echo "Enter the number of your WiFi network or 'n' to enter a new SSID:"
+read -r choice
+
+if [[ $choice =~ ^[0-9]+$ ]]; then
+    USER_SSID=$(nmcli dev wifi | awk 'NR=='$((choice + 1))'{print $2}')
 else
-    echo "Using default settings as configuration file not found!"
-    SSID=$DEFAULT_SSID
-    PASSWORD=$DEFAULT_PASSWORD
-    CON_NAME=$DEFAULT_CON_NAME
-    CONNECTION_PRIORITY=$DEFAULT_CONNECTION_PRIORITY
+    echo "Enter new SSID:"
+    read -r USER_SSID
 fi
 
-echo "Updating WiFi Credentials with nmcli..."
-# Check if the connection already exists, if it does, delete it
-if nmcli con show | grep -q "$CON_NAME"; then
-    nmcli con delete "$CON_NAME"
-fi
+# Ask for the WiFi password
+read -s -p "Enter WiFi Password for $USER_SSID: " USER_PASSWORD
+echo ""
 
-# Add a new connection with the provided credentials
-if nmcli con add con-name "$CON_NAME" ifname wlan0 type wifi ssid "$SSID"; then
-    # Only continue if the connection was successfully created
-    nmcli con modify "$CON_NAME" wifi-sec.key-mgmt wpa-psk
-    nmcli con modify "$CON_NAME" wifi-sec.psk "$PASSWORD"
-    nmcli con modify "$CON_NAME" connection.autoconnect yes
-    
-    # Set the WiFi connection to the given priority from config
-    nmcli con modify "$CON_NAME" connection.autoconnect-priority $CONNECTION_PRIORITY
-    
-    echo "WiFi credentials updated with nmcli!"
-else
-    echo "Failed to add new connection."
-fi
+# Update WiFi with user provided details
+create_or_update_wifi "$USER_SSID" "$USER_PASSWORD" "$USER_SSID" 100
 
 # Lower the priority of all Ethernet connections starting with "Wired connection"
 echo "========== SETTING UP ETHERNET PRIORITY =========="
