@@ -25,7 +25,7 @@ This guide will walk you through steps to **set up the template SD Card**, then 
 Quick way:
 
 ```bash
-git clone https://github.com/oa-kai/opi-setup.git ~/player
+git clone https://github.com/oa-device/opi-setup.git ~/player
 ```
 
 Detail can be found at **Migrate the all the scripts to the SD Card** section.
@@ -131,7 +131,7 @@ Multiple ways to do this:
   The same copy of this repository is also hosted on a public repository associated with Kai orangead account. However, this method is not recommended as it requires Kai to constantly update the code on GitHub, where our team is not normally working on. To clone the repository, run the following command on the OrangePi 5B:
 
   ```bash
-  git clone https://github.com/oa-kai/opi-setup.git ~/player
+  git clone https://github.com/oa-device/opi-setup.git ~/player
   ```
 
 ### 4. Install all the necessary packages
