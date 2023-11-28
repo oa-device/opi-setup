@@ -64,6 +64,28 @@ list_wifi_networks() {
     echo "$original_output" | cat -n
 }
 
+# Function to extract the SSID, handling SSIDs with spaces
+extract_ssid() {
+    local line_number="$1"
+    local ssid
+
+    # Extract the line corresponding to the user's choice
+    ssid=$(sed -n "${line_number}p" "$TEMP_FILE")
+
+    # Use a regular expression to extract the SSID
+    # This regex assumes that the SSID is followed by 'Infra' and is after the BSSID
+    if [[ $ssid =~ [0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}[[:space:]]+(.+)Infra ]]; then
+        ssid="${BASH_REMATCH[2]}"
+        # Trim leading and trailing spaces
+        ssid=$(echo "$ssid" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    else
+        echo "Failed to extract SSID."
+        return 1
+    fi
+
+    echo "$ssid"
+}
+
 # Check and setup default WiFi connection
 echo "Checking for default WiFi connection..."
 create_or_update_wifi "$DEFAULT_SSID" "$DEFAULT_PASSWORD" "$DEFAULT_CON_NAME" "$DEFAULT_CONNECTION_PRIORITY"
@@ -75,15 +97,18 @@ echo -e "\nEnter the number of your WiFi network or 'n' to enter a new SSID:"
 read -r choice
 
 if [[ $choice =~ ^[0-9]+$ ]]; then
-    # Retrieve the SSID from the cleaned output, assuming SSID is the 2nd column
-    SSID_SELECTED=$(awk 'NR=='$((choice + 1))'{print $2}' "$TEMP_FILE")
+    SSID_SELECTED=$(extract_ssid $((choice + 1)))
+    if [[ $? -ne 0 ]]; then
+        echo "Error extracting SSID. Please try again."
+        exit 1
+    fi
 else
     echo "Enter new SSID:"
-    read -r USER_SSID
+    read -r SSID_SELECTED
 fi
 
-# Ask for the WiFi password
-read -p "Enter WiFi Password for $SSID_SELECTED: " USER_PASSWORD
+# Ask for the WiFi password.
+read -p "Enter WiFi Password for \"$SSID_SELECTED\": " USER_PASSWORD
 echo ""
 
 # Update WiFi with user provided details
