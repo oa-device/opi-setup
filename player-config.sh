@@ -87,7 +87,7 @@ prompt_for_directory_choice
 ENV_NAME=$(basename "$WORKING_DIR")
 SLIDESHOW_SCRIPT="$WORKING_DIR/dist/linux/slideshow-player"
 IMEI_FILE="$WORKING_DIR/dist/Documents/imei.txt"
-CHROMIUM_ARGUMENTS="--no-first-run --hide-crash-restore-bubble --aggressive-cache-discard --disable-application-cache --media-cache-size=1 --disk-cache-size=1"
+CHROMIUM_ARGUMENTS="--no-first-run --hide-crash-restore-bubble --auto-accept-camera-and-microphone-capture --aggressive-cache-discard --disable-application-cache --media-cache-size=1 --disk-cache-size=1"
 
 # Remove existing directory and extract the new release
 [[ -d "$WORKING_DIR" ]] && rm -rf "$WORKING_DIR" && echo "Removed existing $ENV_NAME directory."
