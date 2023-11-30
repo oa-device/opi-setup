@@ -104,8 +104,11 @@ if [ -f "$KEYRING_FILE" ]; then
         echo "VNC entry added to the keyring file."
     elif ! grep -q "secret=orangead" <<< "$vnc_entry"; then
         # Update the existing entry if the secret is different
-        vnc_block=$(grep -n "\[.*\]" "$KEYRING_FILE" | grep -B1 "org.gnome.RemoteDesktop.VncPassword" | head -1 | cut -d: -f1)
-        sed -i "${vnc_block},${vnc_block_number:attribute0}/{s/secret=.*/secret=orangead/}" "$KEYRING_FILE"
+        vnc_display_name_line=$(grep -n "display-name=GNOME Remote Desktop VNC password" "$KEYRING_FILE" | cut -d: -f1)
+        vnc_secret_line=$((vnc_display_name_line + 1))  # The secret line follows the display-name line
+
+        # Update the secret within the found block
+        sed -i "${vnc_secret_line}s/secret=.*/secret=orangead/" "$KEYRING_FILE"
         echo "VNC entry updated in the keyring file."
     else
         echo "VNC entry is already up-to-date in the keyring file."
