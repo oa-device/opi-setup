@@ -93,7 +93,7 @@ create_or_update_wifi "$DEFAULT_SSID" "$DEFAULT_PASSWORD" "$DEFAULT_CON_NAME" "$
 # List available WiFi networks
 list_wifi_networks
 
-echo -e "\nEnter the number of your WiFi network or 'n' to enter a new SSID:"
+echo -e "\nEnter the number of your WiFi network, type 'n' to enter a new SSID, or hit Enter to skip:"
 read -r choice
 
 if [[ $choice =~ ^[0-9]+$ ]]; then
@@ -102,17 +102,26 @@ if [[ $choice =~ ^[0-9]+$ ]]; then
         echo "Error extracting SSID. Please try again."
         exit 1
     fi
-else
+
+    # Ask for the WiFi password.
+    read -p "Enter WiFi Password for \"$SSID_SELECTED\": " USER_PASSWORD
+    echo ""
+
+    # Update WiFi with user provided details
+    create_or_update_wifi "$SSID_SELECTED" "$USER_PASSWORD" "$SSID_SELECTED" 100
+elif [[ $choice == "n" ]]; then
     echo "Enter new SSID:"
     read -r SSID_SELECTED
+
+    # Ask for the WiFi password.
+    read -p "Enter WiFi Password for \"$SSID_SELECTED\": " USER_PASSWORD
+    echo ""
+
+    # Update WiFi with user provided details
+    create_or_update_wifi "$SSID_SELECTED" "$USER_PASSWORD" "$SSID_SELECTED" 100
+else
+    echo "Skipping WiFi setup."
 fi
-
-# Ask for the WiFi password.
-read -p "Enter WiFi Password for \"$SSID_SELECTED\": " USER_PASSWORD
-echo ""
-
-# Update WiFi with user provided details
-create_or_update_wifi "$SSID_SELECTED" "$USER_PASSWORD" "$SSID_SELECTED" 100
 
 # Lower the priority of all Ethernet connections starting with "Wired connection"
 echo "========== SETTING UP ETHERNET PRIORITY =========="

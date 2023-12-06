@@ -12,30 +12,32 @@ print_section() {
     echo -e "\n\e[1;33m========== $1 ==========\e[0m"
 }
 
-# Change the default password
+
 print_section "CHANGING DEFAULT PASSWORD"
 echo "orangepi:orangead" | sudo chpasswd
 
-# Configure timezone settings
+
 print_section "SETTING TIMEZONE TO MONTREAL"
 sudo timedatectl set-timezone America/Montreal
 echo "Current timezone set to: $(timedatectl | grep "Time zone" | awk '{print $3}')"
 
-# Execute the display configuration script
+
 print_section "CONFIGURING DISPLAY"
 "$CURRENT_DIR/util-scripts/display.sh"
 
-# Configure the wifi
+
 print_section "CONFIGURING WIFI"
 "$CURRENT_DIR/util-scripts/wifi.sh"
 
-# Schedule a daily reboot via crontab
+
 print_section "SETTING UP DAILY REBOOT AT 3AM"
 echo "0 3 * * * /sbin/reboot" | crontab -
-crontab -l
+echo "Current crontab setting:"
+crontab -l | sed 's/^/\t/'
 
-# Setup systemd services (excluding slideshow-player.service)
+
 print_section "SETTING UP SYSTEMD SERVICES"
+# slideshow-player.service will be handled separately in player-config.sh
 for service in "$CURRENT_DIR"/systemd/*.service; do
     if [ -f "$service" ]; then
         service_name=$(basename "$service")
@@ -51,44 +53,71 @@ for service in "$CURRENT_DIR"/systemd/*.service; do
     fi
 done
 
-# Configure GNOME settings
-print_section "CONFIGURING GNOME SETTINGS"
 
-# Disable the Update Notifier
+print_section "DISABLING UPDATE NOTIFICATIONS"
+# Disable update-notifier
 gsettings set com.ubuntu.update-notifier no-show-notifications true
+# Disable check for major release upgrades
+gsettings set com.ubuntu.update-manager check-dist-upgrades false
+# Ignore new releases
+gsettings set com.ubuntu.update-manager check-new-release-ignore true
+# Ensure update-manager does not run on first launch, which might trigger notifications
+gsettings set com.ubuntu.update-manager first-run false
 
+# Disable automatic updates in the background via unattended-upgrades
+sudo sed -i 's/^APT::Periodic::Unattended-Upgrade "1";/APT::Periodic::Unattended-Upgrade "0";/g' /etc/apt/apt.conf.d/20auto-upgrades
+
+# Stop the periodic update checks for package lists, new upgrades, and autoclean intervals
+sudo sed -i 's/^APT::Periodic::Update-Package-Lists "1";/APT::Periodic::Update-Package-Lists "0";/g' /etc/apt/apt.conf.d/10periodic
+sudo sed -i 's/^APT::Periodic::Download-Upgradeable-Packages "1";/APT::Periodic::Download-Upgradeable-Packages "0";/g' /etc/apt/apt.conf.d/10periodic
+sudo sed -i 's/^APT::Periodic::AutocleanInterval "1";/APT::Periodic::AutocleanInterval "0";/g' /etc/apt/apt.conf.d/10periodic
+
+# Adjusting settings in the 02-orangepi-periodic file
+sudo sed -i 's/^APT::Periodic::Enable ".*";/APT::Periodic::Enable "0";/' /etc/apt/apt.conf.d/02-orangepi-periodic
+sudo sed -i 's/^APT::Periodic::Update-Package-Lists ".*";/APT::Periodic::Update-Package-Lists "0";/' /etc/apt/apt.conf.d/02-orangepi-periodic
+sudo sed -i 's/^APT::Periodic::Unattended-Upgrade ".*";/APT::Periodic::Unattended-Upgrade "0";/' /etc/apt/apt.conf.d/02-orangepi-periodic
+sudo sed -i 's/^APT::Periodic::AutocleanInterval ".*";/APT::Periodic::AutocleanInterval "0";/' /etc/apt/apt.conf.d/02-orangepi-periodic
+
+# Disable dpkg post-invoke action for update-notifier
+sudo sed -i 's/^DPkg::Post-Invoke {/#&/' /etc/apt/apt.conf.d/99update-notifier
+# Disable APT update post-invoke success action for update-notifier
+sudo sed -i 's/^APT::Update::Post-Invoke-Success {/#&/' /etc/apt/apt.conf.d/99update-notifier
+
+# Log the final state of the update-manager settings
+echo "Update-manager settings:"
+gsettings list-recursively com.ubuntu.update-manager | sed 's/^/\t/'
+echo "Update-notifier settings:"
+gsettings list-recursively com.ubuntu.update-notifier | sed 's/^/\t/'
+
+
+print_section "CONFIGURING GNOME SETTINGS"
 # Disable Bluetooth by default
 rfkill block bluetooth
 gsettings set org.blueman.plugins.powermanager auto-power-on false
 bluetooth_status=$(rfkill list bluetooth | grep -c "Soft blocked: yes")
-[ "$bluetooth_status" -gt 0 ] && echo "Bluetooth is off" || echo "Bluetooth is on"
+[ "$bluetooth_status" -gt 0 ] && echo "Bluetooth: off" || echo "Bluetooth: on"
 
 # Configure the on-screen keyboard settings
 gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true
+keyboard_status=$(gsettings get org.gnome.desktop.a11y.applications screen-keyboard-enabled)
+[ "$keyboard_status" = "true" ] && echo "On-screen keyboard: on" || echo "On-screen keyboard: off"
 
 # Configure power settings to prevent screen dimming and blanking
 gsettings set org.gnome.settings-daemon.plugins.power idle-dim false
 gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 0
 gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 0
+echo "Power settings:"
+gsettings list-recursively org.gnome.settings-daemon.plugins.power | sed 's/^/\t/'
 
-# Keep grdctl code commented as a reference
-# grdctl rdp enable
-# grdctl rdp set-credentials orangepi orangead
-# grdctl rdp disable-view-only
-# grdctl vnc enable
-# grdctl vnc set-auth-method password
-# grdctl vnc set-password orangead
-# grdctl vnc disable-view-only
-# grdctl status --show-credentials
 
-# Check and clean for repeated keyring files
-KEYRING_DIR="/home/orangepi/.local/share/keyrings"
 print_section "CLEANING UP KEYRING FILES"
+KEYRING_DIR="/home/orangepi/.local/share/keyrings"
 # Remove repeated keyring files
 find "$KEYRING_DIR" -type f -name 'Default_keyring*.keyring' ! -name 'Default_keyring.keyring' -exec rm {} \;
 # Log the final state of keyring files
 echo "Current keyring files in the directory after cleanup:"
-ls "$KEYRING_DIR" | grep 'Default_keyring*.keyring'
+ls "$KEYRING_DIR" | grep 'Default_keyring*.keyring' | sed 's/^/\t/'
+
 
 # Check and update keyring file for VNC settings
 print_section "UPDATING KEYRING FILE FOR VNC SETTINGS"
@@ -118,24 +147,32 @@ else
 fi
 
 
-# Check if gnome-remote-desktop is service running on port 5900 and start it if not
-print_section "CONFIGURING GNOME REMOTE DESKTOP SERVICE"
+print_section "ENABLE GNOME REMOTE DESKTOP SERVICE"
 systemctl --user start gnome-remote-desktop
 systemctl --user status gnome-remote-desktop
 
-# Enable VNC
-print_section "CONFIGURING VNC"
+
+print_section "ENABLE VNC"
 grdctl vnc enable
 grdctl vnc set-auth-method password
 grdctl vnc disable-view-only
 grdctl status --show-credentials
+# Keep grdctl code commented as a reference
+# grdctl rdp enable
+# grdctl rdp set-credentials orangepi orangead
+# grdctl rdp disable-view-only
+# grdctl vnc enable
+# grdctl vnc set-auth-method password
+# grdctl vnc set-password orangead
+# grdctl vnc disable-view-only
+# grdctl status --show-credentials
 
-# Update and Upgrade system packages
+
 print_section "UPDATING SYSTEM"
 sudo apt update
 sudo apt upgrade --fix-missing -y
 
-# Execute initialization scripts from the init-scripts directory
+
 print_section "RUNNING INIT SCRIPTS"
 for script in "$CURRENT_DIR"/init-scripts/*.sh; do
     if [ -f "$script" ] && [ -x "$script" ]; then
