@@ -65,6 +65,7 @@ gsettings set com.ubuntu.update-manager check-new-release-ignore true
 gsettings set com.ubuntu.update-manager first-run false
 
 # Disable automatic updates in the background via unattended-upgrades
+sudo sed -i 's/^APT::Periodic:Update-Package-Lists "1";/APT::Periodic:Update-Package-Lists "0";/g' /etc/apt/apt.conf.d/20auto-upgrades
 sudo sed -i 's/^APT::Periodic::Unattended-Upgrade "1";/APT::Periodic::Unattended-Upgrade "0";/g' /etc/apt/apt.conf.d/20auto-upgrades
 
 # Stop the periodic update checks for package lists, new upgrades, and autoclean intervals
