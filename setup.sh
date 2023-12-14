@@ -113,8 +113,8 @@ gsettings list-recursively org.gnome.settings-daemon.plugins.power | sed 's/^/\t
 
 print_section "CLEANING UP KEYRING FILES"
 KEYRING_DIR="/home/orangepi/.local/share/keyrings"
-# Remove repeated keyring files
-find "$KEYRING_DIR" -type f -name 'Default_keyring*.keyring' ! -name 'Default_keyring.keyring' -exec rm {} \;
+# Rename keyring files by appending .bak extension
+find "$KEYRING_DIR" -type f -name 'Default_keyring*.keyring' ! -name 'Default_keyring.keyring' -exec mv {} {}.bak \;
 # Log the final state of keyring files
 echo "Current keyring files in the directory after cleanup:"
 ls "$KEYRING_DIR" | grep 'Default_keyring*.keyring' | sed 's/^/\t/'
