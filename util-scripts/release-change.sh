@@ -52,7 +52,7 @@ EOF
 sudo cp "$ROOT_DIR/systemd/slideshow-player.service" /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable slideshow-player.service
-sudo systemctl start slideshow-player.service
+sudo systemctl restart slideshow-player.service
 # Check and print the status of the service
 service_status=$(sudo systemctl is-active slideshow-player.service)
 echo "slideshow-player.service is $service_status"
