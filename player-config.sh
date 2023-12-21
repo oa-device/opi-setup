@@ -71,7 +71,11 @@ grant_chromium_camera_access() {
         jq '.profile.content_settings.exceptions.media_stream_camera += {"http://localhost:8080,*": {"setting": 1}}' "$PREFERENCES_FILE" > "${PREFERENCES_FILE}.tmp" && mv "${PREFERENCES_FILE}.tmp" "$PREFERENCES_FILE"
         echo "Granted camera permission for localhost:8080 in $PREFERENCES_FILE"
     else
-        echo "Chromium Preferences file not found. Make sure chromium-browser has been run at least once."
+        echo "Chromium Preferences file not found. Starting chromium-browser to create it..."
+        chromium-browser &
+        sleep 3  # Wait for Chromium to start and create the Preferences file
+        pkill chromium  # Kill Chromium so we can modify the Preferences file
+        grant_chromium_camera_access  # Recursive call to grant camera access now that the Preferences file should exist
     fi
 }
 
