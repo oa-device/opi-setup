@@ -14,7 +14,8 @@ read -p "Enter the new hostname: " new_hostname
 sudo hostnamectl set-hostname "$new_hostname"
 
 # Ask the user if they want a different IMEI than the hostname
-read -p "The imei.txt file will be changed to match the new hostname.\nIf you want a different IMEI, enter it now (leave blank to keep as hostname): " new_imei
+echo -e "The imei.txt file will be changed to match the new hostname.\nIf you want a different IMEI, enter it now (leave blank to keep as hostname): "
+read new_imei
 
 # If the user leaves it blank, set new_imei to new_hostname
 new_imei=${new_imei:-$new_hostname}
