@@ -63,21 +63,23 @@ grant_chromium_camera_access() {
     # Ensure that the chromium-browser is not running when modifying this file.
     pkill chromium
 
-    if [[ -f "$PREFERENCES_FILE" ]]; then
-        # Backup the original Preferences file.
-        cp "$PREFERENCES_FILE" "${PREFERENCES_FILE}.backup"
-
-        # Use jq to set camera permission for localhost:8080 without last_modified
-        jq '.profile.content_settings.exceptions.media_stream_camera += {"http://localhost:8080,*": {"setting": 1}}' "$PREFERENCES_FILE" > "${PREFERENCES_FILE}.tmp" && mv "${PREFERENCES_FILE}.tmp" "$PREFERENCES_FILE"
-        echo "Granted camera permission for localhost:8080 in $PREFERENCES_FILE"
-    else
+    if [[ ! -f "$PREFERENCES_FILE" ]]; then
         echo "Chromium Preferences file not found. Starting chromium-browser to create it..."
         export DISPLAY=:0.0
-        chromium-browser &
-        sleep 3  # Wait for Chromium to start and create the Preferences file
+        chromium-browser --disable-session-crashed-bubble --disable-infobars > /dev/null 2>&1 &
+        echo "Waiting for Chromium to create the Preferences file..."
+        while [[ ! -f "$PREFERENCES_FILE" ]]; do
+            sleep 1  # Wait for 1 second before checking again
+        done
         pkill chromium  # Kill Chromium so we can modify the Preferences file
-        grant_chromium_camera_access  # Recursive call to grant camera access now that the Preferences file should exist
     fi
+
+    # Backup the original Preferences file.
+    cp "$PREFERENCES_FILE" "${PREFERENCES_FILE}.backup"
+
+    # Use jq to set camera permission for localhost:8080 without last_modified
+    jq '.profile.content_settings.exceptions.media_stream_camera += {"http://localhost:8080,*": {"setting": 1}}' "$PREFERENCES_FILE" > "${PREFERENCES_FILE}.tmp" && mv "${PREFERENCES_FILE}.tmp" "$PREFERENCES_FILE"
+    echo "Granted camera permission for localhost:8080 in $PREFERENCES_FILE"
 }
 
 # Main Execution
