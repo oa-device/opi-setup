@@ -151,7 +151,7 @@ fi
 print_section "ENABLE GNOME REMOTE DESKTOP SERVICE"
 systemctl --user enable gnome-remote-desktop
 systemctl --user start gnome-remote-desktop
-systemctl --user status gnome-remote-desktop
+systemctl --user  --no-pager status gnome-remote-desktop
 
 
 print_section "ENABLE VNC"

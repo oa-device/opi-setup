@@ -47,10 +47,13 @@ generate_imei_file() {
     echo -e "Current IMEI is set to: \e[1;31m$CURRENT_IMEI\e[0m."
     echo -e "\e[1;32mIf needed, please provide a new IMEI (press Enter to keep the current one).\e[0m"
     
-    read -p "Enter a new IMEI: " NEW_IMEI
+    read -t 10 -p "Enter a new IMEI: " NEW_IMEI
     
-    # If the user doesn't input a new IMEI, keep the current one.
-    [[ -z "$NEW_IMEI" ]] && NEW_IMEI="$CURRENT_IMEI"
+    # If the user doesn't input a new IMEI within 10 seconds, keep the current one.
+    if [[ -z "$NEW_IMEI" ]]; then
+        echo "No input received within 10 seconds, using the current IMEI."
+        NEW_IMEI="$CURRENT_IMEI"
+    fi
     
     echo "$NEW_IMEI" > "$IMEI_FILE"
     echo -e "IMEI set to: \e[1;31m$NEW_IMEI\e[0m in $IMEI_FILE"
