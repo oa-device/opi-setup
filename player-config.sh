@@ -72,6 +72,7 @@ grant_chromium_camera_access() {
         echo "Granted camera permission for localhost:8080 in $PREFERENCES_FILE"
     else
         echo "Chromium Preferences file not found. Starting chromium-browser to create it..."
+        export DISPLAY=:0.0
         chromium-browser &
         sleep 3  # Wait for Chromium to start and create the Preferences file
         pkill chromium  # Kill Chromium so we can modify the Preferences file
