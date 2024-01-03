@@ -29,9 +29,8 @@ if [ -n "$USERNAME" ] && [ -n "$IP" ]; then
     --exclude='prod/' \
     --exclude='preprod/' \
     --exclude='staging/' \
-    --exclude='logs/display_setup.log' \
-    --exclude='logs/slideshow_log.log' \
-    --exclude='logs/hide_cursor.log' \
+    --exclude='logs/*' \
+    --include='logs/.placeholder' \
     "$DIR/" "$DEST"
 else
     echo "Both username and IP must be provided!"
