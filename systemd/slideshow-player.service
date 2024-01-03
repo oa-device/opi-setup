@@ -10,8 +10,8 @@ ExecStartPre=/bin/sleep 5
 ExecStart=/home/orangepi/player/prod/dist/linux/slideshow-player
 Restart=on-failure
 RestartSec=5
-StandardOutput=file:/home/orangepi/player/logs/slideshow_log.log
-StandardError=file:/home/orangepi/player/logs/slideshow_log.log
+StandardOutput=null
+StandardError=journal
 
 [Install]
 WantedBy=graphical.target

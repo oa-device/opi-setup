@@ -1,0 +1,19 @@
+[Unit]
+Description=Chromium Log Monitor
+Requires=slideshow-player.service
+PartOf=slideshow-player.service
+After=graphical.target
+
+
+[Service]
+Type=simple
+User=orangepi 
+ExecStartPre=/bin/sleep 6
+ExecStart=/home/orangepi/player/util-scripts/chromium-log-monitor
+Restart=on-failure
+RestartSec=5
+StandardOutput=null
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

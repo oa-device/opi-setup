@@ -37,12 +37,12 @@ crontab -l | sed 's/^/\t/'
 
 
 print_section "SETTING UP SYSTEMD SERVICES"
-# slideshow-player.service will be handled separately in player-config.sh
+# slideshow-player.service and chromium-log-monitor.service will be handled separately in player-config.sh
 for service in "$CURRENT_DIR"/systemd/*.service; do
     if [ -f "$service" ]; then
         service_name=$(basename "$service")
         
-        if [ "$service_name" != "slideshow-player.service" ]; then
+        if [ "$service_name" != "slideshow-player.service" ] && [ "$service_name" != "chromium-log-monitor.service" ]; then
             sudo cp "$service" /etc/systemd/system/
             sudo systemctl enable "$service_name"
             sudo systemctl start "$service_name"
