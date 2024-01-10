@@ -124,7 +124,9 @@ SLIDESHOW_SCRIPT="$WORKING_DIR/dist/linux/slideshow-player"
 IMEI_FILE="$WORKING_DIR/dist/Documents/imei.txt"
 CHROMIUM_ARGUMENTS=" --enable-logging --v=1 --autoplay-policy=no-user-gesture-required --no-first-run --hide-crash-restore-bubble --aggressive-cache-discard --disable-application-cache --media-cache-size=1 --disk-cache-size=1"
 
+# Processes name purposely truncated to 15 characters to match systemd service name
 pkill slideshow-playe
+pkill chromium-log-mo
 
 # Remove existing directory and extract the new release
 [[ -d "$WORKING_DIR" ]] && rm -rf "$WORKING_DIR" && echo "Removed existing $ENV_NAME directory."
