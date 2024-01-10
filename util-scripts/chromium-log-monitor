@@ -9,8 +9,31 @@ CONSOLE_LOG_FILE="$CHROMIUM_LOG_DIR/$TODAY.log"
 mkdir -p "$CHROMIUM_LOG_DIR"
 touch "$CONSOLE_LOG_FILE"
 
+# Generate the log start message
+LOG_START_MSG="### $(date +"%Y-%m-%d %H:%M:%S") - Chromium log monitoring script started ###"
+
+# Calculate the length of the log start message
+MSG_LENGTH=${#LOG_START_MSG}
+
+# Generate a line of '#' characters of the same length
+LINE=$(printf '%*s' "$MSG_LENGTH" | tr ' ' '#')
+
 # Log the script run with timestamp. Add a new line before the log entry.
-echo -e "\n$(date +"%Y-%m-%d %H:%M:%S") - Chromium log monitoring script started" >> "$CONSOLE_LOG_FILE"
+echo -e "\n$LINE\n$LOG_START_MSG\n$LINE\n" >> "$CONSOLE_LOG_FILE"
+
+# Wait for slideshow-player to start and Chromium log file to exist
+while true; do
+    if pgrep "slideshow-playe" > /dev/null; then
+        if [ -f "$CHROME_LOG_FILE" ]; then
+            break
+        else
+            echo "Waiting for Chromium log file to exist..."
+        fi
+    else
+        echo "Waiting for slideshow-player to start..."
+    fi
+    sleep 1
+done
 
 # Continuously extract console logs from Chromium's log file to the daily log file
-tail -f "$CHROME_LOG_FILE" | grep --line-buffered 'INFO:CONSOLE' >> "$CONSOLE_LOG_FILE"
+tail --follow=name "$CHROME_LOG_FILE" | grep --line-buffered 'INFO:CONSOLE' >> "$CONSOLE_LOG_FILE"

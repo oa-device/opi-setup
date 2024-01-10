@@ -1,6 +1,7 @@
 [Unit]
 Description=Run slideshow-player at startup
 After=graphical.target
+Wants=chromium-log-monitor.service
 
 [Service]
 Type=simple

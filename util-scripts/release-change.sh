@@ -27,58 +27,19 @@ else
     exit 1
 fi
 
-# Generate systemd service file for slideshow-player
-cat > "$ROOT_DIR/systemd/slideshow-player.service" << EOF
-[Unit]
-Description=Run slideshow-player at startup
-After=graphical.target
-
-[Service]
-Type=simple
-User=orangepi
-Environment=DISPLAY=:0
-ExecStartPre=/bin/sleep 5
-ExecStart=$WORKING_DIR/dist/linux/slideshow-player
-Restart=on-failure
-RestartSec=5
-StandardOutput=null
-StandardError=journal
-
-[Install]
-WantedBy=graphical.target
-EOF
-
-# Generate systemd service file for chromium-log-monitor
-cat > "$ROOT_DIR/systemd/chromium-log-monitor.service" << EOF
-[Unit]
-Description=Chromium Log Monitor
-Requires=slideshow-player.service
-PartOf=slideshow-player.service
-After=graphical.target
-
-
-[Service]
-Type=simple
-User=orangepi 
-ExecStartPre=/bin/sleep 6
-ExecStart=/home/orangepi/player/util-scripts/chromium-log-monitor
-Restart=on-failure
-RestartSec=5
-StandardOutput=null
-StandardError=journal
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
 # Copy the service files to /etc/systemd/system/ and manage their states
 sudo cp "$ROOT_DIR/systemd/slideshow-player.service" /etc/systemd/system/
 sudo cp "$ROOT_DIR/systemd/chromium-log-monitor.service" /etc/systemd/system/
+
+# Replace the loaded slideshow-player.service with the chosen release
+sudo sed -i "s|ExecStart=.*|ExecStart=$WORKING_DIR/dist/linux/slideshow-player|" /etc/systemd/system/slideshow-player.service
+
 sudo systemctl daemon-reload
+sudo systemctl disable slideshow-player.service
+sudo systemctl disable chromium-log-monitor.service
 sudo systemctl enable slideshow-player.service
 sudo systemctl enable chromium-log-monitor.service
 sudo systemctl restart slideshow-player.service
-sudo systemctl restart chromium-log-monitor.service
 
 # Check and print the status of the services
 slideshow_status=$(sudo systemctl is-active slideshow-player.service)
