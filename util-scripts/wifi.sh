@@ -21,21 +21,25 @@ create_or_update_wifi() {
     fi
 
     # Add a new connection with the provided credentials
-    if nmcli con add con-name "$con_name" ifname wlan0 type wifi ssid "$ssid"; then
-        # Set up WiFi security only if a password is provided
-        if [ -n "$password" ]; then
+    if [ -n "$password" ]; then
+        if nmcli con add con-name "$con_name" ifname wlan0 type wifi ssid "$ssid"; then
             nmcli con modify "$con_name" wifi-sec.key-mgmt wpa-psk
             nmcli con modify "$con_name" wifi-sec.psk "$password"
+            echo "WiFi credentials updated for $con_name"
         else
-            echo -e "\nWARNING: $con_name does not require a password, but may need extra interaction.\n"
-            nmcli con modify "$con_name" wifi-sec.key-mgmt none
+            echo "Failed to add new connection for $con_name."
         fi
-        nmcli con modify "$con_name" connection.autoconnect yes
-        nmcli con modify "$con_name" connection.autoconnect-priority "$priority"
-        echo "WiFi credentials updated for $con_name"
     else
-        echo "Failed to add new connection for $con_name."
+        if nmcli --ask dev wifi connect "$con_name"; then
+            echo "WiFi credentials updated for $con_name"
+        else
+            echo "Failed to add new connection for $con_name."
+        fi
     fi
+
+    # Configure autoconnect and priority
+    nmcli con modify "$con_name" connection.autoconnect yes
+    nmcli con modify "$con_name" connection.autoconnect-priority "$priority"
 }
 
 # Function to list available WiFi networks and handle user selection
