@@ -47,6 +47,8 @@ fi
 
 
 print_section "CONFIGURING ALIASES"
+[ -L "$CURRENT_DIR/util-scripts/oasetup" ] || ln -s "$CURRENT_DIR/setup.sh" "$CURRENT_DIR/util-scripts/oasetup"
+[ -L "$CURRENT_DIR/util-scripts/oaplayer" ] || ln -s "$CURRENT_DIR/player-config.sh" "$CURRENT_DIR/util-scripts/oaplayer"
 if ! grep -q "alias oasetup=" ~/.bashrc; then
     echo "alias oasetup=\"$CURRENT_DIR/util-scripts/oasetup\"" >> ~/.bashrc
 fi
