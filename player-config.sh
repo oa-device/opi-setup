@@ -20,7 +20,9 @@ prompt_for_directory_choice() {
     echo "3. Staging"
     if [[ -n "$CURRENT_RELEASE" ]]; then
         echo -e "The current release is \e[1;33m$CURRENT_RELEASE\e[0m.\n"
-        read -p "Press Enter to continue using this release, or enter a number (1-3) to choose a different directory: " choice
+        if ! read -t 10 -p "Press Enter to continue using this release, or enter a number (1-3) to choose a different directory: " choice; then
+            echo -e "\n\e[1;31mNo input received within 10 seconds, using the current release.\e[0m"
+        fi
         if [[ -z "$choice" ]]; then
             WORKING_DIR="$CURRENT_RELEASE"
             case "$CURRENT_RELEASE" in
@@ -128,8 +130,13 @@ CHROMIUM_ARGUMENTS=" --enable-logging --v=1 --autoplay-policy=no-user-gesture-re
 pkill slideshow-playe
 pkill chromium-log-mo
 
-# Remove existing directory and extract the new release
-[[ -d "$WORKING_DIR" ]] && rm -rf "$WORKING_DIR" && echo "Removed existing $ENV_NAME directory."
+# If the directory exists, remove it
+if [[ -d "$WORKING_DIR" ]]; then
+    rm -rf "$WORKING_DIR"
+    echo "Removed existing $ENV_NAME directory."
+fi
+
+# Extract the new release
 extract_release_file
 
 # Slideshow script updates

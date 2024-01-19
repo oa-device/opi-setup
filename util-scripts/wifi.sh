@@ -93,8 +93,14 @@ create_or_update_wifi "$DEFAULT_SSID" "$DEFAULT_PASSWORD" "$DEFAULT_CON_NAME" "$
 # List available WiFi networks
 list_wifi_networks
 
-echo -e "\nEnter the number of your WiFi network, type 'n' to enter a new SSID, or hit Enter to skip:"
-read -r choice
+echo -e "\n\e[1;31mIf no input is made within 30 seconds, the script will skip the WiFi setup.\e[0m"
+echo "Enter the number of your WiFi network, type 'n' to enter a new SSID, or hit Enter to skip:"
+read -t 30 -r choice
+
+if [[ $? -ne 0 ]]; then
+    echo "Skipping WiFi setup due to timeout."
+    exit 1
+fi
 
 if [[ $choice =~ ^[0-9]+$ ]]; then
     SSID_SELECTED=$(extract_ssid $((choice + 1)))

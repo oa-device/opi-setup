@@ -4,12 +4,19 @@
 DEFAULT_USERNAME="orangepi"
 DEFAULT_DEST_DIR="/home/orangepi/player"
 
-# Ask for the remote device username
-read -p "Enter remote device username (default: $DEFAULT_USERNAME): " USERNAME
-USERNAME=${USERNAME:-$DEFAULT_USERNAME}
+# If command-line arguments are provided, use them. Otherwise, ask for input.
+if [ -n "$1" ]; then
+    USERNAME=$1
+else
+    read -p "Enter remote device username (default: $DEFAULT_USERNAME): " USERNAME
+    USERNAME=${USERNAME:-$DEFAULT_USERNAME}
+fi
 
-# Ask for the remote device IP
-read -p "Enter remote device IP: " IP
+if [ -n "$2" ]; then
+    IP=$2
+else
+    read -p "Enter remote device IP: " IP
+fi
 
 # Determine the directory of the script
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -31,6 +38,8 @@ if [ -n "$USERNAME" ] && [ -n "$IP" ]; then
     --exclude='staging/' \
     --exclude='logs/*' \
     --include='logs/.placeholder' \
+    --exclude='util-scripts/oasetup' \
+    --exclude='util-scripts/oaplayer' \
     "$DIR/" "$DEST"
 else
     echo "Both username and IP must be provided!"

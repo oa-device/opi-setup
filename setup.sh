@@ -13,6 +13,51 @@ print_section() {
 }
 
 
+print_section "CONFIGURE SUDO RIGHTS FOR ORANGEPI USER"
+BINARIES=(
+    "/usr/bin/apt"
+    "/usr/bin/apt-get"
+    "/usr/bin/cp"
+    "/usr/bin/mv"
+    "/usr/bin/mkdir"
+    "/usr/bin/rm"
+    "/usr/bin/sed"
+    "/usr/bin/systemctl"
+    "/usr/bin/tee"
+    "/usr/bin/timedatectl"
+    "/usr/sbin/reboot"
+    "/usr/sbin/chpasswd"
+)
+SUDO_RIGHTS="orangepi ALL=(ALL) NOPASSWD: ${BINARIES[0]}"
+for binary in "${BINARIES[@]:1}"; do
+    SUDO_RIGHTS+=", $binary"
+done
+if [ -z "$(cat /etc/sudoers.d/orangepi 2>/dev/null)" ]; then
+    echo "Sudo rights not yet configured for orangepi user. Configuring..."
+    echo $SUDO_RIGHTS | sudo tee /etc/sudoers.d/orangepi > /dev/null
+    echo "Sudo rights granted for orangepi user."
+elif [ "$(cat /etc/sudoers.d/orangepi)" != "$SUDO_RIGHTS" ]; then
+    echo "Updating sudo rights for orangepi user..."
+    sudo mv /etc/sudoers.d/orangepi /home/orangepi/orangepi_sudo.bak
+    echo $SUDO_RIGHTS | sudo tee /etc/sudoers.d/orangepi > /dev/null
+    echo "Sudo rights updated for orangepi user."
+else
+    echo "Sudo rights already configured for orangepi user."
+fi
+
+
+print_section "CONFIGURING ALIASES"
+if ! grep -q "alias oasetup=" ~/.bashrc; then
+    echo "alias oasetup=\"$CURRENT_DIR/util-scripts/oasetup\"" >> ~/.bashrc
+fi
+if ! grep -q "alias oaplayer=" ~/.bashrc; then
+    echo "alias oaplayer=\"$CURRENT_DIR/util-scripts/oaplayer\"" >> ~/.bashrc
+fi
+if ! grep -q "alias sreboot=" ~/.bashrc; then
+    echo "alias sreboot=\"sudo reboot\"" >> ~/.bashrc
+fi
+
+
 print_section "CHANGING DEFAULT PASSWORD"
 echo "orangepi:orangead" | sudo chpasswd
 
@@ -39,17 +84,13 @@ crontab -l | sed 's/^/\t/'
 print_section "SETTING UP SYSTEMD SERVICES"
 # slideshow-player.service and chromium-log-monitor.service will be handled separately in player-config.sh
 for service in "$CURRENT_DIR"/systemd/*.service; do
-    if [ -f "$service" ]; then
-        service_name=$(basename "$service")
-        
-        if [ "$service_name" != "slideshow-player.service" ] && [ "$service_name" != "chromium-log-monitor.service" ]; then
-            sudo cp "$service" /etc/systemd/system/
-            sudo systemctl enable "$service_name"
-            sudo systemctl start "$service_name"
-            echo "$service_name is $(sudo systemctl is-active "$service_name")"
-        else
-            echo "Skipping $service_name"
-        fi
+    service_name=$(basename "$service")
+    
+    if [ -f "$service" ] && [ "$service_name" != "slideshow-player.service" ] && [ "$service_name" != "chromium-log-monitor.service" ]; then
+        sudo cp "$service" /etc/systemd/system/
+        sudo systemctl daemon-reload
+        sudo systemctl enable --now "$service_name"
+        echo "$service_name is $(sudo systemctl is-active "$service_name")"
     fi
 done
 
@@ -159,15 +200,6 @@ grdctl vnc enable
 grdctl vnc set-auth-method password
 grdctl vnc disable-view-only
 grdctl status --show-credentials
-# Keep grdctl code commented as a reference
-# grdctl rdp enable
-# grdctl rdp set-credentials orangepi orangead
-# grdctl rdp disable-view-only
-# grdctl vnc enable
-# grdctl vnc set-auth-method password
-# grdctl vnc set-password orangead
-# grdctl vnc disable-view-only
-# grdctl status --show-credentials
 
 
 print_section "UPDATING SYSTEM"
