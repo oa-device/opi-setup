@@ -1,7 +1,9 @@
 .DS_Store
+dist/
 prod/
 preprod/
 staging/
-
 logs/*
 !logs/.placeholder
+/util-scripts/oasetup
+/util-scripts/oaplayer
