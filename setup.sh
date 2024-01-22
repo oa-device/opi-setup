@@ -20,6 +20,7 @@ BINARIES=(
     "/usr/bin/cp"
     "/usr/bin/mv"
     "/usr/bin/mkdir"
+    "/usr/bin/nano"
     "/usr/bin/rm"
     "/usr/bin/sed"
     "/usr/bin/systemctl"
@@ -49,14 +50,9 @@ fi
 print_section "CONFIGURING ALIASES"
 [ -L "$CURRENT_DIR/util-scripts/oasetup" ] || ln -s "$CURRENT_DIR/setup.sh" "$CURRENT_DIR/util-scripts/oasetup"
 [ -L "$CURRENT_DIR/util-scripts/oaplayer" ] || ln -s "$CURRENT_DIR/player-config.sh" "$CURRENT_DIR/util-scripts/oaplayer"
-if ! grep -q "alias oasetup=" ~/.bashrc; then
-    echo "alias oasetup=\"$CURRENT_DIR/util-scripts/oasetup\"" >> ~/.bashrc
-fi
-if ! grep -q "alias oaplayer=" ~/.bashrc; then
-    echo "alias oaplayer=\"$CURRENT_DIR/util-scripts/oaplayer\"" >> ~/.bashrc
-fi
-if ! grep -q "alias sreboot=" ~/.bashrc; then
-    echo "alias sreboot=\"sudo reboot\"" >> ~/.bashrc
+if ! grep -Fxq 'export PATH="$PATH:/home/orangepi/player/util-scripts"' ~/.bashrc
+then
+    sed -i '/# If not running interactively, don'\''t do anything/i export PATH="$PATH:/home/orangepi/player/util-scripts"' ~/.bashrc
 fi
 
 
