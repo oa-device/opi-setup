@@ -48,8 +48,6 @@ fi
 
 
 print_section "CONFIGURING ALIASES"
-[ -L "$CURRENT_DIR/util-scripts/oasetup" ] || ln -s "$CURRENT_DIR/setup.sh" "$CURRENT_DIR/util-scripts/oasetup"
-[ -L "$CURRENT_DIR/util-scripts/oaplayer" ] || ln -s "$CURRENT_DIR/player-config.sh" "$CURRENT_DIR/util-scripts/oaplayer"
 if ! grep -Fxq 'export PATH="$PATH:/home/orangepi/player/util-scripts"' ~/.bashrc
 then
     sed -i '/# If not running interactively, don'\''t do anything/i export PATH="$PATH:/home/orangepi/player/util-scripts"' ~/.bashrc
