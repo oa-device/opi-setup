@@ -33,6 +33,7 @@ if [ -n "$USERNAME" ] && [ -n "$IP" ]; then
     --exclude='.git/' \
     --exclude='.gitignore' \
     --exclude='dev.sh' \
+    --exclude='config/' \
     --exclude='prod/' \
     --exclude='preprod/' \
     --exclude='staging/' \
