@@ -9,8 +9,8 @@ current_date=$(date +"%Y-%m-%d %H:%M:%S")
 # Get the short SHA of the current commit
 current_commit=$(git rev-parse --short HEAD)
 
-# Stash any changes
-git stash push -u -m "Date: $current_date, Commit: $current_commit"
+# Stash any changes in the config/ directory
+git stash push -u -m "Date: $current_date, Commit: $current_commit" -- config/
 
 # Pull the latest changes from the repository
 git pull
