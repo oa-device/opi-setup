@@ -38,8 +38,6 @@ if [ -n "$USERNAME" ] && [ -n "$IP" ]; then
     --exclude='staging/' \
     --exclude='logs/*' \
     --include='logs/.placeholder' \
-    --exclude='util-scripts/oasetup' \
-    --exclude='util-scripts/oaplayer' \
     "$DIR/" "$DEST"
 else
     echo "Both username and IP must be provided!"
