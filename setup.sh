@@ -199,8 +199,8 @@ grdctl status --show-credentials
 
 
 print_section "UPDATING SYSTEM"
-sudo apt update
-sudo apt upgrade --fix-missing -y
+sudo apt-get update
+sudo apt-get upgrade --fix-missing -y
 
 
 print_section "RUNNING INIT SCRIPTS"
