@@ -51,6 +51,10 @@ print_section "CONFIGURING ALIASES"
 if ! grep -Fxq 'export PATH="$PATH:/home/orangepi/player/util-scripts"' ~/.bashrc
 then
     sed -i '/# If not running interactively, don'\''t do anything/i export PATH="$PATH:/home/orangepi/player/util-scripts"' ~/.bashrc
+    echo -e "\033[1;31mThe PATH has been updated. \nPlease exit the terminal and ssh in again, or run '. ~/.bashrc' after this script finishes to apply the changes.\033[0m"
+    read -p "Press enter to continue"
+else
+    echo "The PATH is already configured correctly."
 fi
 
 

@@ -30,6 +30,7 @@ if [ -n "$USERNAME" ] && [ -n "$IP" ]; then
     rsync -av -e ssh --progress \
     --delete \
     --exclude='.DS_Store' \
+    --exclude='README.md' \
     --exclude='.git/' \
     --exclude='.gitignore' \
     --exclude='dev.sh' \
