@@ -20,18 +20,22 @@ prompt_for_directory_choice() {
     echo "3. Staging"
     if [[ -n "$CURRENT_RELEASE" ]]; then
         echo -e "The current release is \e[1;33m$CURRENT_RELEASE\e[0m.\n"
-        if ! read -t 10 -p "Press Enter to continue using this release, or enter a number (1-3) to choose a different directory: " choice; then
-            echo -e "\n\e[1;31mNo input received within 10 seconds, using the current release.\e[0m"
+        if [[ -z "$SSH_TTY" ]]; then
+            echo -e "\e[1;31mNon-interactive shell or SSH connection detected, using the current release.\e[0m"
+            choice=""
+        else
+            read -t 10 -p "Press Enter to continue using this release, or enter a number (1-3) to choose a different directory: " choice
+            if [[ -z "$choice" ]]; then
+                echo -e "\n\e[1;31mNo input received within 10 seconds, using the current release.\e[0m"
+            fi
         fi
-        if [[ -z "$choice" ]]; then
-            WORKING_DIR="$CURRENT_RELEASE"
-            case "$CURRENT_RELEASE" in
-                "prod") choice=1;;
-                "preprod") choice=2;;
-                "staging") choice=3;;
-            esac
-            return
-        fi
+        WORKING_DIR="$CURRENT_RELEASE"
+        case "$CURRENT_RELEASE" in
+            "prod") choice=1;;
+            "preprod") choice=2;;
+            "staging") choice=3;;
+        esac
+        return
     else
         read -p "Enter your choice (1-3): " choice
     fi
@@ -68,18 +72,21 @@ update_slideshow_script() {
 generate_imei_file() {
     local CURRENT_IMEI="$HOSTNAME"
     
-    # Using a combination of text effects to make the prompt stand out
     echo -e "\n\e[1;33m=================================================="
     echo -e "IMPORTANT: IMEI CONFIGURATION"
     echo -e "=================================================="
     echo -e "Current IMEI is set to: \e[1;31m$CURRENT_IMEI\e[0m."
     echo -e "\e[1;32mIf needed, please provide a new IMEI (press Enter to keep the current one).\e[0m"
     
-    if ! read -t 10 -p "Enter a new IMEI: " NEW_IMEI; then
-        echo -e "\e[1;31mNo input received within 10 seconds, using the current IMEI\e[0m."
+    if [[ -z "$SSH_TTY" ]]; then
+        echo -e "\e[1;31mNon-interactive shell or SSH connection detected, using the current IMEI\e[0m."
         NEW_IMEI="$CURRENT_IMEI"
-    elif [[ -z "$NEW_IMEI" ]]; then
-        NEW_IMEI="$CURRENT_IMEI"
+    else
+        read -t 10 -p "Enter a new IMEI: " NEW_IMEI
+        if [[ -z "$NEW_IMEI" ]]; then
+            echo -e "\e[1;31mNo input received within 10 seconds, using the current IMEI\e[0m."
+            NEW_IMEI="$CURRENT_IMEI"
+        fi
     fi
     
     echo "$NEW_IMEI" > "$IMEI_FILE"
