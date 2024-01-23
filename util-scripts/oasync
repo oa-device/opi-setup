@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# Navigate to the /home/orangepi/player directory
+cd /home/orangepi/player
+
+# Get the current date and time
+current_date=$(date +"%Y-%m-%d %H:%M:%S")
+
+# Get the short SHA of the current commit
+current_commit=$(git rev-parse --short HEAD)
+
+# Stash any changes
+git stash push -u -m "Date: $current_date, Commit: $current_commit"
+
+# Pull the latest changes from the repository
+git pull
+
+# Apply the stashed changes
+git stash pop stash@{0}
+
+# Run oasetup and oaplayer
+oasetup
+oaplayer

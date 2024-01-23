@@ -32,7 +32,7 @@ if [ -n "$USERNAME" ] && [ -n "$IP" ]; then
     --exclude='.DS_Store' \
     --exclude='.git/' \
     --exclude='.gitignore' \
-    --exclude='sync.sh' \
+    --exclude='dev.sh' \
     --exclude='prod/' \
     --exclude='preprod/' \
     --exclude='staging/' \
