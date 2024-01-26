@@ -117,7 +117,7 @@ cd ~/player
 ./setup.sh
 ```
 
-> :warning: **IMPORTANT**: This step is **CRUCIAL**. It handles adding the `util-scripts/` folder to the PATH, installs all the necessary packages, and sets up the auto-run processes on boot.
+> ⚠️ **IMPORTANT**: This step is **CRUCIAL**. It handles adding the `util-scripts/` folder to the PATH, installs all the necessary packages, and sets up the auto-run processes on boot.
 
 ### 2. Migrate from SD Card to eMMC
 
@@ -171,3 +171,13 @@ oaplayer
 
 - The script will ask you to choose which release you want to use (`prod`, `preprod` or `staging`). Choose accordingly to your need.
 - Running the `player.sh` script will automatically set up the slideshow player to run on startup on the selected release. If you want to change the release, you can run the `player.sh` script again and choose a different release.
+
+### Update Remote Origin for 'player' on OrangePi devices
+
+Run these commands in each device's terminal:
+
+```bash
+cd ~/player
+git remote set-url origin https://github.com/oa-device/opi-setup.git
+git remote -v
+```
