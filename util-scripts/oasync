@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Define the directories to include in the stash
+items_to_include="
+config/
+systemd/
+"
+
 # Navigate to the /home/orangepi/player directory
 cd /home/orangepi/player || { echo "Error: Could not navigate to /home/orangepi/player"; exit 1; }
 
@@ -10,18 +16,18 @@ current_date=$(date +"%Y-%m-%d %H:%M:%S")
 current_commit=$(git rev-parse --short HEAD)
 
 # Create a temporary stash
-git stash push -u -m "Temp stash for comparison" -- config/ > /dev/null 2>&1 || { echo "Error: Could not create temporary stash"; exit 1; }
+git stash push -u -m "Temp stash for comparison" -- $items_to_include > /dev/null 2>&1 || { echo "Error: Could not create temporary stash"; exit 1; }
 
 # Check if the temporary stash is the same as the last stash
 if git stash list | grep -q 'stash@{1}' && git diff stash@{0} stash@{1} --quiet; then
-    echo "Changes in config/ directory are the same as the last stash"
+    echo "Changes in directories are the same as the last stash"
     # Drop the temporary stash
     git stash drop stash@{0} > /dev/null 2>&1 || { echo "Error: Could not drop temporary stash"; exit 1; }
 else
     # Apply the temporary stash
     git stash apply stash@{0} > /dev/null 2>&1 || { echo "Error: Could not apply temporary stash"; exit 1; }
     # Create a new stash with the desired message
-    git stash push -u -m "Date: $current_date, Commit: $current_commit" -- config/ > /dev/null 2>&1 || { echo "Error: Could not create new stash"; exit 1; }
+    git stash push -u -m "Date: $current_date, Commit: $current_commit" -- $items_to_include > /dev/null 2>&1 || { echo "Error: Could not create new stash"; exit 1; }
     # Drop the temporary stash
     git stash drop stash@{1} > /dev/null 2>&1 || { echo "Error: Could not drop temporary stash"; exit 1; }
 fi
