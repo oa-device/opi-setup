@@ -3,10 +3,10 @@
 echo "========== SETTING UP BACKGROUND IMAGES =========="
 
 # Determine current directory dynamically
-CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+INIT_SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Copy all .jpg images to the Pictures folder
-find "$CURRENT_DIR" -maxdepth 1 -type f -iname "*.jpg" -exec cp {} "$HOME/Pictures/" \;
+find "$INIT_SCRIPT_DIR" -maxdepth 1 -type f -iname "*.jpg" -exec cp {} "$HOME/Pictures/" \;
 
 # Get the first .jpg image found in the Pictures folder for setting as background
 BACKGROUND_IMAGE=$(find "$HOME/Pictures" -maxdepth 1 -type f -iname "*.jpg" | head -n 1)

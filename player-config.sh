@@ -37,14 +37,16 @@ prompt_for_directory_choice() {
         esac
         return
     else
-        read -p "Enter your choice (1-3): " choice
+        while true; do
+            read -p "Enter your choice (1-3): " choice
+            case $choice in
+                1) WORKING_DIR="$ROOT_DIR/prod"; break;;
+                2) WORKING_DIR="$ROOT_DIR/preprod"; break;;
+                3) WORKING_DIR="$ROOT_DIR/staging"; break;;
+                *) echo "Invalid choice. Please enter a valid choice (1-3):";;
+            esac
+        done
     fi
-    case $choice in
-        1) WORKING_DIR="$CURRENT_DIR/prod";;
-        2) WORKING_DIR="$CURRENT_DIR/preprod";;
-        3) WORKING_DIR="$CURRENT_DIR/staging";;
-        *) echo "Invalid choice. Exiting."; exit 1;;
-    esac
 }
 
 extract_release_file() {
@@ -121,9 +123,9 @@ grant_chromium_camera_access() {
 
 # Main Execution
 HOSTNAME=$(hostname)
-CURRENT_DIR=$(dirname "$(readlink -f "$0")")
-RELEASES_DIR="$CURRENT_DIR/releases"
-LOGS_DIR="$CURRENT_DIR/logs"
+ROOT_DIR=$(dirname "$(readlink -f "$0")")
+RELEASES_DIR="$ROOT_DIR/releases"
+LOGS_DIR="$ROOT_DIR/logs"
 mkdir -p "$LOGS_DIR"
 
 prompt_for_directory_choice
@@ -156,6 +158,6 @@ grant_chromium_camera_access
 generate_imei_file
 
 # Call the release-change script
-"$CURRENT_DIR/util-scripts/release-change.sh" "$choice"
+"$ROOT_DIR/util-scripts/release-change.sh" "$choice"
 
 echo "Setup complete."

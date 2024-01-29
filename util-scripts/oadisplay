@@ -1,8 +1,8 @@
 #!/bin/bash
 
-CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-DISPLAY_CONFIG_FILE="$(dirname "$CURRENT_DIR")/config/display.conf"
+UTIL_SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DISPLAY_CONFIG_FILE="$(dirname "$UTIL_SCRIPT_DIR")/config/display.conf"
 
 nano "$DISPLAY_CONFIG_FILE"
 
-"$CURRENT_DIR/display.sh"
+"$UTIL_SCRIPT_DIR/display.sh"

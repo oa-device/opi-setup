@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Get the directory of the current script's directory and the root directory
-SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
-ROOT_DIR=$(dirname "$SCRIPT_DIR")
+UTIL_SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+ROOT_DIR=$(dirname "$UTIL_SCRIPT_DIR")
 
 # Get the choice as an argument, or ask the user if not provided
 if [ -z "$1" ]; then

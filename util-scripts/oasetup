@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-ROOT_DIR="$(dirname "$CURRENT_DIR")"
+UTIL_SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT_DIR="$(dirname "$UTIL_SCRIPT_DIR")"
 
 "$ROOT_DIR/setup.sh"

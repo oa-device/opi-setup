@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Initialize the current directory
-CURRENT_DIR=$(dirname "$(readlink -f "$0")")
+ROOT_DIR=$(dirname "$(readlink -f "$0")")
 
 # Directories
-LOGS_DIR="$CURRENT_DIR/logs"
+LOGS_DIR="$ROOT_DIR/logs"
 mkdir -p "$LOGS_DIR"
 
 # Function to print section headers for clarity
@@ -68,11 +68,11 @@ echo "Current timezone set to: $(timedatectl | grep "Time zone" | awk '{print $3
 
 
 print_section "CONFIGURING DISPLAY"
-"$CURRENT_DIR/util-scripts/display.sh"
+"$ROOT_DIR/util-scripts/display.sh"
 
 
 print_section "CONFIGURING WIFI"
-"$CURRENT_DIR/util-scripts/wifi.sh"
+"$ROOT_DIR/util-scripts/wifi.sh"
 
 
 print_section "SETTING UP DAILY REBOOT AT 3AM"
@@ -83,7 +83,7 @@ crontab -l | sed 's/^/\t/'
 
 print_section "SETTING UP SYSTEMD SERVICES"
 # slideshow-player.service and chromium-log-monitor.service will be handled separately in player-config.sh
-for service in "$CURRENT_DIR"/systemd/*.service; do
+for service in "$ROOT_DIR"/systemd/*.service; do
     service_name=$(basename "$service")
     
     if [ -f "$service" ] && [ "$service_name" != "slideshow-player.service" ] && [ "$service_name" != "chromium-log-monitor.service" ]; then
@@ -208,7 +208,7 @@ sudo apt-get upgrade --fix-missing -y
 
 
 print_section "RUNNING INIT SCRIPTS"
-for script in "$CURRENT_DIR"/init-scripts/*.sh; do
+for script in "$ROOT_DIR"/init-scripts/*.sh; do
     if [ -f "$script" ] && [ -x "$script" ]; then
         echo "Executing $script..."
         "$script"
