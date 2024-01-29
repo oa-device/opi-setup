@@ -29,7 +29,7 @@ prompt_for_directory_choice() {
                 echo -e "\n\e[1;31mNo input received within 10 seconds, using the current release.\e[0m"
             fi
         fi
-        WORKING_DIR="$CURRENT_RELEASE"
+        WORKING_DIR="$ROOT_DIR/$CURRENT_RELEASE"
         case "$CURRENT_RELEASE" in
             "prod") choice=1;;
             "preprod") choice=2;;
