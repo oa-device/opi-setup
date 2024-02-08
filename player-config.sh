@@ -21,24 +21,6 @@ set_choice_based_on_current_release() {
     esac
 }
 
-handle_user_input() {
-    local CURRENT_RELEASE=$1
-    read -t 10 -p "Press Enter to continue using this release, or enter a number (1-3) to choose a different directory: " choice
-    if [[ -z "$choice" ]]; then
-        echo -e "\n\e[1;31mNo input received within 10 seconds, using the current release.\e[0m"
-        choice=$(set_choice_based_on_current_release "$CURRENT_RELEASE")
-    else
-        case "$choice" in
-            1) CURRENT_RELEASE="prod";;
-            2) CURRENT_RELEASE="preprod";;
-            3) CURRENT_RELEASE="staging";;
-            *) echo "Invalid choice. Please enter a valid choice (1-3):";;
-        esac
-    fi
-    echo "$CURRENT_RELEASE"
-    return $choice  # Return the choice value
-}
-
 prompt_for_directory_choice() {
     local CURRENT_RELEASE=$(get_current_release)
     echo "Which directory do you want to use?"
@@ -51,8 +33,18 @@ prompt_for_directory_choice() {
             echo -e "\e[1;31mNon-interactive shell or SSH connection detected, using the current release.\e[0m"
             choice=$(set_choice_based_on_current_release "$CURRENT_RELEASE")
         else
-            CURRENT_RELEASE=$(handle_user_input "$CURRENT_RELEASE")
-            choice=$?  # Get the returned choice value
+            read -t 10 -p "Press Enter to continue using this release, or enter a number (1-3) to choose a different directory: " choice
+            if [[ -z "$choice" ]]; then
+                echo -e "\n\e[1;31mNo input received within 10 seconds, using the current release.\e[0m"
+                choice=$(set_choice_based_on_current_release "$CURRENT_RELEASE")
+            else
+                case "$choice" in
+                    1) CURRENT_RELEASE="prod";;
+                    2) CURRENT_RELEASE="preprod";;
+                    3) CURRENT_RELEASE="staging";;
+                    *) echo "Invalid choice. Please enter a valid choice (1-3):";;
+                esac
+            fi
         fi
         WORKING_DIR="$ROOT_DIR/$CURRENT_RELEASE"
         return
