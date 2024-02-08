@@ -3,7 +3,6 @@
 # Define the directories to include in the stash
 dirs_to_exclude="
 config/
-systemd/
 "
 
 # Navigate to the /home/orangepi/player directory
@@ -15,33 +14,34 @@ current_date=$(date +"%Y-%m-%d %H:%M:%S")
 # Get the short SHA of the current commit
 current_commit=$(git rev-parse --short HEAD)
 
-# Create a stash for all changes
-git stash -u > /dev/null 2>&1 || { echo "Error: Could not create temporary stash"; exit 1; }
-
-# Check if the temporary stash is the same as the last stash
-if git stash list | grep -q 'stash@{1}' && git diff stash@{0} stash@{1} --quiet; then
-    echo "Changes in directories are the same as the last stash"
-    # Drop the temporary stash
-    git stash drop stash@{0} > /dev/null 2>&1 || { echo "Error: Could not drop temporary stash"; exit 1; }
+# Check if there are changes to stash
+if git diff --quiet; then
+    echo "No changes to stash"
 else
-    # Apply the temporary stash only to the directories in dirs_to_exclude
-    for dir in $dirs_to_exclude; do
-        git checkout stash@{0} -- $dir > /dev/null 2>&1 || { echo "Error: Could not apply temporary stash to $dir"; exit 1; }
-    done
-    # Create a new stash with the desired message
-    git stash save "Date: $current_date, Commit: $current_commit" > /dev/null 2>&1 || { echo "Error: Could not create new stash"; exit 1; }
-    # Drop the temporary stash
-    git stash drop stash@{1} > /dev/null 2>&1 || { echo "Error: Could not drop temporary stash"; exit 1; }
+    # Create a temporary stash
+    git stash push -u -m "Temp stash for comparison" -- $dirs_to_exclude > /dev/null 2>&1 || { echo "Error: Could not create temporary stash"; exit 1; }
+
+    # Check if the temporary stash is the same as the last stash
+    if git stash list | grep -q 'stash@{1}' && git diff stash@{0} stash@{1} --quiet; then
+        echo "Changes in directories are the same as the last stash"
+        # Drop the temporary stash
+        git stash drop stash@{0} > /dev/null 2>&1 || { echo "Error: Could not drop temporary stash"; exit 1; }
+    else
+        # Apply the temporary stash
+        git stash apply stash@{0} > /dev/null 2>&1 || { echo "Error: Could not apply temporary stash"; exit 1; }
+        # Create a new stash with the desired message
+        git stash push -u -m "Date: $current_date, Commit: $current_commit" -- $dirs_to_exclude > /dev/null 2>&1 || { echo "Error: Could not create new stash"; exit 1; }
+        # Drop the temporary stash
+        git stash drop stash@{1} > /dev/null 2>&1 || { echo "Error: Could not drop temporary stash"; exit 1; }
+    fi
 fi
 
 # Pull the latest changes from the repository
 git pull || { echo "Error: Could not pull latest changes"; exit 1; }
 
-# Apply the stashed changes only to the directories in dirs_to_exclude
+# Apply the stashed changes
 if git stash list | grep -q 'stash@{0}'; then
-    for dir in $dirs_to_exclude; do
-        git checkout stash@{0} -- $dir || { echo "Error: Could not apply stashed changes to $dir"; exit 1; }
-    done
+    git stash apply stash@{0} || { echo "Error: Could not apply stashed changes"; exit 1; }
 else
     echo "No stashes to apply"
 fi
