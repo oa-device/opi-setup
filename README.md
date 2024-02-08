@@ -12,13 +12,14 @@ Key scripts and their purposes in the OrangeAd Player project:
 - `oaplayer` (`player-config.sh`): Manages the Player app, including release selection and autorun configuration. After the initial `setup.sh` has been run, use `oaplayer` for easy access.
 - `oasync`: A utility for updating the project from the Git repository while preserving local `config/` folder changes. It stashes local changes, pulls updates, reapplies the stash, and then runs `oasetup` and `oaplayer`.
 - `oadisplay`: Edit the `config/display.conf` file with expected display resolution and orientation settings. The script also rerun `display.sh` to apply the changes.
+- `sreboot`: Reboots the device.
 
 ## Auto-Run Processes on Boot
 
 Services configured to run automatically on boot:
 
 - `slideshow-player.service`: Configures the Player to start automatically on boot, the core functionality of the project.
-- `chromium-log-monitor.service`: Runs `chromium-log-monitor` to filter and store relevant logs, eliminating unnecessary Chrome logs.
+- `chromium-log-monitor.service`: Runs `chromium-log-monitor` to filter and store relevant logs every days, eliminating unnecessary Chrome logs.
 - `display-setup.service`: Executes `display.sh` at boot for display resolution and orientation setup. See `config/display.conf` for specific configurations.
 - `hide-cursor.service`: Activates `unclutter` to hide the cursor after 2 seconds of inactivity.
 
@@ -42,16 +43,28 @@ git clone -b dev https://github.com/oa-device/opi-setup.git ~/player
 oasync
 ```
 
+### How to update the system?
+
+```bash
+oasetup
+```
+
 ### How to change display resolution and orientation?
 
 ```bash
 oadisplay
 ```
 
-### How to change from one release to another?
+### How to change from one release to another, or to update the player?
 
 ```bash
 oaplayer
+```
+
+### How to reboot the device?
+
+```bash
+sreboot
 ```
 
 ### What to do if 'oa' commands cannot be found?
@@ -65,7 +78,7 @@ orangepi@opi-kai:~$ oasetup
 
 Please follow these steps:
 
-- Run the `setup.sh` script directly from the `~/player` directory.
+- Run the `setup.sh` script directly inside the `~/player` directory.
 - Exit the terminal then ssh into the machine again. Alternatively, you can run `source ~/.bashrc`.
 
 ## Onboarding New OrangePi
@@ -172,7 +185,7 @@ oaplayer
 - The script will ask you to choose which release you want to use (`prod`, `preprod` or `staging`). Choose accordingly to your need.
 - Running the `player.sh` script will automatically set up the slideshow player to run on startup on the selected release. If you want to change the release, you can run the `player.sh` script again and choose a different release.
 
-### Update Remote Origin for 'player' on OrangePi devices
+### (Optional) If needed, update Remote Origin for very old devices
 
 Run these commands in each device's terminal:
 
