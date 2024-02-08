@@ -27,14 +27,16 @@ prompt_for_directory_choice() {
             read -t 10 -p "Press Enter to continue using this release, or enter a number (1-3) to choose a different directory: " choice
             if [[ -z "$choice" ]]; then
                 echo -e "\n\e[1;31mNo input received within 10 seconds, using the current release.\e[0m"
+            else
+                case "$choice" in
+                    1) CURRENT_RELEASE="prod";;
+                    2) CURRENT_RELEASE="preprod";;
+                    3) CURRENT_RELEASE="staging";;
+                    *) echo "Invalid choice. Please enter a valid choice (1-3):";;
+                esac
             fi
         fi
         WORKING_DIR="$ROOT_DIR/$CURRENT_RELEASE"
-        case "$CURRENT_RELEASE" in
-            "prod") choice=1;;
-            "preprod") choice=2;;
-            "staging") choice=3;;
-        esac
         return
     else
         while true; do
