@@ -1,0 +1,15 @@
+[Unit]
+Description=Run watchdog script at startup
+After=graphical.target lightdm.service
+
+[Service]
+Type=simple
+User=orangepi
+Environment=WAYLAND_DISPLAY=wayland-0
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+ExecStart=/home/orangepi/player/util-scripts/watchdog
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=graphical.target
