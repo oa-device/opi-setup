@@ -56,19 +56,35 @@ check_display() {
     fi
 }
 
+# Initialize a counter for the activating state
+ACTIVATING_COUNTER=0
 check_slideshow_service() {
     log_message "Checking slideshow-player service..."
-    if systemctl is-active --quiet slideshow-player.service; then
+    service_status=$(systemctl is-active slideshow-player.service)  # Store the status of the service
+    if [[ $service_status == "active" ]]; then
         # Check if chromium-browser is running as part of the service
         if systemctl status slideshow-player.service | grep -q "chromium-browser"; then
             log_message "slideshow-player service check passed."
+            ACTIVATING_COUNTER=0  # Reset the counter
             return 0
         else
             log_message "slideshow-player service is running but chromium-browser is not started."
+            log_message "$(systemctl status --no-pager slideshow-player.service)"  # Log the status of the service
+            return 1
+        fi
+    elif [[ $service_status == "activating" ]]; then
+        ACTIVATING_COUNTER=$((ACTIVATING_COUNTER+1))  # Increment the counter
+        if [[ $ACTIVATING_COUNTER -le 3 ]]; then
+            log_message "slideshow-player service is activating. Waiting..."
+            return 0
+        else
+            log_message "slideshow-player service is still activating after 30 seconds. Restarting..."
+            ACTIVATING_COUNTER=0  # Reset the counter
             return 1
         fi
     else
         log_message "slideshow-player service check failed."
+        log_message "slideshow-player service is: $service_status"  # Log the status of the service
         return 1
     fi
 }
