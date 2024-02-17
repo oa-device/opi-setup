@@ -1,0 +1,127 @@
+#!/bin/bash
+
+# Dynamically get the current directory of the script
+UTIL_SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DISPLAY_CONFIG_FILE="$(dirname "$UTIL_SCRIPT_DIR")/config/display.conf"
+
+# Read values from config file
+source "$DISPLAY_CONFIG_FILE"
+
+# Define the log directory and file
+LOG_DIR="/home/orangepi/player/logs/watchdog"
+mkdir -p "$LOG_DIR"
+TODAY=$(date +"%Y-%m-%d")
+LOG_FILE="$LOG_DIR/$TODAY.log"
+
+# Function to log messages
+log_message() {
+    echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
+}
+
+# Generate the log start message
+LOG_START_MSG="### $(date +"%Y-%m-%d %H:%M:%S") - Watchdog script started ###"
+
+# Calculate the length of the log start message
+MSG_LENGTH=${#LOG_START_MSG}
+
+# Generate a line of '#' characters of the same length
+LINE=$(printf '%*s' "$MSG_LENGTH" | tr ' ' '#')
+
+# Log the script run with timestamp. Add a new line before the log entry.
+echo -e "\n$LINE\n$LOG_START_MSG\n$LINE\n" >> "$LOG_FILE"
+
+check_lightdm_service() {
+    log_message "Checking lightdm service..."
+    if systemctl status lightdm.service | grep -q "pam_succeed_if(lightdm:auth)"; then
+        log_message "lightdm service check failed."
+        return 1
+    else
+        log_message "lightdm service check passed."
+        return 0
+    fi
+}
+
+check_display() {
+    log_message "Checking display setup..."
+    output=$(/usr/bin/python3 "${UTIL_SCRIPT_DIR}/gnome-randr.py" | cat -A)
+    if [[ $output == *"logical monitor 0"* ]] && \
+       [[ $output =~ "$PREFERRED_RESOLUTION".*"$PREFERRED_RATE.00*".*"$" ]] && \
+       [[ $output == *"rotation: $ROTATE"* ]] && \
+       [[ $output == *"scale: $SCALE"* ]]; then
+        log_message "Display setup check passed."
+        return 0
+    else
+        log_message "Display setup check failed."
+        return 1
+    fi
+}
+
+check_slideshow_service() {
+    log_message "Checking slideshow-player service..."
+    if systemctl is-active --quiet slideshow-player.service; then
+        # Check if chromium-browser is running as part of the service
+        if systemctl status slideshow-player.service | grep -q "chromium-browser"; then
+            log_message "slideshow-player service check passed."
+            return 0
+        else
+            log_message "slideshow-player service is running but chromium-browser is not started."
+            return 1
+        fi
+    else
+        log_message "slideshow-player service check failed."
+        return 1
+    fi
+}
+
+restart_services() {
+    # Check the status of the lightdm service
+    check_lightdm_service
+
+    # If the service is not running correctly, restart it
+    if [ $? -eq 1 ]; then
+        log_message "lightdm service is not running correctly. Restarting..."
+        sudo systemctl restart lightdm.service
+
+        # Wait for the service to restart
+        sleep 10
+
+        # Check the status of the lightdm service again
+        check_lightdm_service
+
+        # If the service is still not running correctly, log a message
+        if [ $? -eq 1 ]; then
+            log_message "lightdm service failed to restart correctly."
+            return 1
+        fi
+    fi
+
+    # Check the display setup
+    check_display
+
+    # If the display is not set up correctly, restart the display-setup service
+    if [ $? -eq 1 ]; then
+        log_message "Display is not set up correctly. Restarting display-setup service..."
+        sudo systemctl restart display-setup.service
+    fi
+
+    # Check the status of the slideshow-player service
+    check_slideshow_service
+
+    # If the service is not running correctly, restart it
+    if [ $? -eq 1 ]; then
+        log_message "slideshow-player service is not running correctly. Restarting..."
+        sudo systemctl restart slideshow-player.service
+    fi
+
+    # Log a message indicating that all checks have been completed
+    log_message "All checks completed."
+}
+
+# Run the watchdog indefinitely
+while true; do
+    # Restart services if necessary
+    restart_services
+
+    # Wait for a specified interval before the next iteration
+    sleep 10
+done
