@@ -1,0 +1,15 @@
+[Unit]
+Description=Run log cleanup script at startup
+After=graphical.target
+
+[Service]
+Type=oneshot
+User=orangepi
+ExecStart=/home/orangepi/player/util-scripts/oalogcl
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=graphical.target
