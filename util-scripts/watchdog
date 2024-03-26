@@ -8,14 +8,14 @@ DISPLAY_CONFIG_FILE="$(dirname "$UTIL_SCRIPT_DIR")/config/display.conf"
 source "$DISPLAY_CONFIG_FILE"
 
 # Define the log directory and file
-LOG_DIR="/home/orangepi/player/logs/watchdog"
-mkdir -p "$LOG_DIR"
+WATCHDOG_LOG_DIR="/home/orangepi/player/logs/watchdog"
+mkdir -p "$WATCHDOG_LOG_DIR"
 TODAY=$(date +"%Y-%m-%d")
-LOG_FILE="$LOG_DIR/$TODAY.log"
+WATCHDOG_LOG_FILE="$WATCHDOG_LOG_DIR/$TODAY.log"
 
 # Function to log messages
 log_message() {
-    echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
+    echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" | tee -a "$WATCHDOG_LOG_FILE"
 }
 
 # Generate the log start message
@@ -28,12 +28,13 @@ MSG_LENGTH=${#LOG_START_MSG}
 LINE=$(printf '%*s' "$MSG_LENGTH" | tr ' ' '#')
 
 # Log the script run with timestamp. Add a new line before the log entry.
-echo -e "\n$LINE\n$LOG_START_MSG\n$LINE\n" >> "$LOG_FILE"
+echo -e "\n$LINE\n$LOG_START_MSG\n$LINE\n" >> "$WATCHDOG_LOG_FILE"
 
 check_lightdm_service() {
     log_message "Checking lightdm service..."
     if systemctl status lightdm.service | grep -q "pam_succeed_if(lightdm:auth)"; then
         log_message "lightdm service check failed."
+        log_message "$(systemctl status --no-pager lightdm.service)"  # Log the status of the service
         return 1
     else
         log_message "lightdm service check passed."
@@ -52,6 +53,7 @@ check_display() {
         return 0
     else
         log_message "Display setup check failed."
+        log_message "Display setup is: $output"  # Log the display setup
         return 1
     fi
 }
