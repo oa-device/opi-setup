@@ -205,9 +205,9 @@ grdctl status --show-credentials
 
 
 print_section "UPDATING SYSTEM"
+export DEBIAN_FRONTEND=noninteractive
 sudo apt-get update
-sudo apt-get upgrade --fix-missing -y
-
+sudo apt-get upgrade --fix-missing -y -o Dpkg::Options::="--force-confnew"
 
 print_section "RUNNING INIT SCRIPTS"
 for script in "$ROOT_DIR"/init-scripts/*.sh; do
