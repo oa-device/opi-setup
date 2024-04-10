@@ -5,7 +5,7 @@ Wants=chromium-log-monitor.service
 
 [Service]
 Type=simple
-User=orangepi 
+User=orangepi
 Environment=DISPLAY=:0
 ExecStartPre=/bin/sleep 5
 ExecStart=/home/orangepi/player/prod/dist/linux/slideshow-player
