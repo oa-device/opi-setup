@@ -127,11 +127,32 @@ sudo sed -i 's/^DPkg::Post-Invoke {/#&/' /etc/apt/apt.conf.d/99update-notifier
 # Disable APT update post-invoke success action for update-notifier
 sudo sed -i 's/^APT::Update::Post-Invoke-Success {/#&/' /etc/apt/apt.conf.d/99update-notifier
 
+# Disable all sources from which packages can be automatically upgraded
+sudo sed -i 's/^Unattended-Upgrade::Allowed-Origins.*/Unattended-Upgrade::Allowed-Origins { };/' /etc/apt/apt.conf.d/50unattended-upgrades
+# Explicitly set development release upgrades to false
+sudo sed -i 's/^Unattended-Upgrade::DevRelease.*/Unattended-Upgrade::DevRelease "false";/' /etc/apt/apt.conf.d/50unattended-upgrades
+# Comment out any existing package blacklist rules, ensuring no packages are set to be avoided
+sudo sed -i 's/^\(Unattended-Upgrade::Package-Blacklist.*\)/# \1/' /etc/apt/apt.conf.d/50unattended-upgrades
+
+# Disable all update-notifier systemd timers
+sudo systemctl disable update-notifier-download.timer
+sudo systemctl stop update-notifier-download.timer
+sudo systemctl disable update-notifier-motd.timer
+sudo systemctl stop update-notifier-motd.timer
+sudo systemctl disable apt-daily.timer
+sudo systemctl stop apt-daily.timer
+sudo systemctl disable apt-daily-upgrade.timer
+sudo systemctl stop apt-daily-upgrade.timer
+
 # Log the final state of the update-manager settings
 echo "Update-manager settings:"
 gsettings list-recursively com.ubuntu.update-manager | sed 's/^/\t/'
 echo "Update-notifier settings:"
 gsettings list-recursively com.ubuntu.update-notifier | sed 's/^/\t/'
+echo "Current timer states:"
+systemctl list-timers --all --no-pager
+echo "Update-related processes:"
+ps aux | grep -i update
 
 
 print_section "CONFIGURING GNOME SETTINGS"
