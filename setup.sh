@@ -100,12 +100,26 @@ done
 print_section "DISABLING UPDATE NOTIFICATIONS"
 # Disable update-notifier
 gsettings set com.ubuntu.update-notifier no-show-notifications true
+# Disable apport crash notifications
+gsettings set com.ubuntu.update-notifier show-apport-crashes false
+# Disable livepatch status notifications
+gsettings set com.ubuntu.update-notifier show-livepatch-status-icon false
+# Disable Ubuntu Advantage notifications
+gsettings set com.ubuntu.update-notifier notify-ubuntu-advantage-available false
+# Set the update check interval to 365 days
+gsettings set com.ubuntu.update-notifier regular-auto-launch-interval 365
 # Disable check for major release upgrades
 gsettings set com.ubuntu.update-manager check-dist-upgrades false
 # Ignore new releases
 gsettings set com.ubuntu.update-manager check-new-release-ignore true
 # Ensure update-manager does not run on first launch, which might trigger notifications
 gsettings set com.ubuntu.update-manager first-run false
+# Hide the details of available updates
+gsettings set com.ubuntu.update-manager show-details false
+# Set the update-manager window size to 1x1
+gsettings set com.ubuntu.update-manager window-height 1
+gsettings set com.ubuntu.update-manager window-width 1
+
 
 # Disable automatic updates in the background via unattended-upgrades
 sudo sed -i 's/^APT::Periodic::Update-Package-Lists "1";/APT::Periodic::Update-Package-Lists "0";/g' /etc/apt/apt.conf.d/20auto-upgrades
