@@ -78,7 +78,7 @@ print_section "CONFIGURING WIFI"
 
 
 print_section "SETTING UP DAILY REBOOT AT 3AM"
-echo "0 3 * * * /home/orangepi/player/util-scripts/oasync && /sbin/reboot" | crontab -
+echo "0 3 * * * . $HOME/.bashrc; /home/orangepi/player/util-scripts/oasync; /sbin/reboot" | crontab -
 echo "Current crontab setting:"
 crontab -l | sed 's/^/\t/'
 
