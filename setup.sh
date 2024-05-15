@@ -17,6 +17,8 @@ print_section "CONFIGURE SUDO RIGHTS FOR ORANGEPI USER"
 BINARIES=(
     "/usr/bin/apt"
     "/usr/bin/apt-get"
+    "/usr/bin/bash"
+    "/usr/bin/curl"
     "/usr/bin/cp"
     "/usr/bin/growpart"
     "/usr/bin/mkdir"
