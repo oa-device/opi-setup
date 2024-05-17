@@ -2,8 +2,13 @@
 
 echo "========== SETTING UP HIDE CURSOR =========="
 
-# Install unclutter
-echo "Installing unclutter..."
-sudo apt-get install -y unclutter
+# Check if unclutter is installed
+if ! command -v unclutter &> /dev/null; then
+    echo "Installing unclutter..."
+    sudo apt-get install -y unclutter
+    echo "unclutter installed!"
+else
+    echo "unclutter is already installed!"
+fi
 
 echo "========== HIDE CURSOR SETUP COMPLETE =========="

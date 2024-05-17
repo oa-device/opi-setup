@@ -1,9 +1,13 @@
 #!/bin/bash
 
-echo "========== SETTING UP JQ FOR EDITTING CHROMIUM PREFERENCE =========="
+echo "========== SETTING UP JQ FOR EDITING CHROMIUM PREFERENCE =========="
 
-# Install jq
-echo "Installing jq..."
-sudo apt-get install -y jq
+# Check if jq is installed
+if ! command -v jq &> /dev/null; then
+    echo "Installing jq..."
+    sudo apt-get install -y jq
+else
+    echo "jq is already installed!"
+fi
 
-echo "========== JQ FOR EDITTING CHROMIUM PREFERENCE SETUP COMPLETE =========="
+echo "========== JQ FOR EDITING CHROMIUM PREFERENCE SETUP COMPLETE =========="
