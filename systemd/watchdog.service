@@ -7,7 +7,7 @@ Type=simple
 User=orangepi
 Environment=WAYLAND_DISPLAY=wayland-0
 Environment=XDG_RUNTIME_DIR=/run/user/1000
-ExecStart=/home/orangepi/player/util-scripts/watchdog
+ExecStart=%PLAYER_UTIL_SCRIPTS_DIR%/watchdog
 Restart=always
 RestartSec=30
 

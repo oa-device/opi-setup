@@ -5,7 +5,7 @@ After=graphical.target
 [Service]
 Type=oneshot
 User=orangepi
-ExecStart=/home/orangepi/player/util-scripts/oalogcl
+ExecStart=%PLAYER_UTIL_SCRIPTS_DIR%/oalogcl
 Restart=on-failure
 RestartSec=5
 StandardOutput=journal

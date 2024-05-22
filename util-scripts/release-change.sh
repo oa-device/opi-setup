@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# Get the directory of the current script's directory and the root directory
-UTIL_SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
-ROOT_DIR=$(dirname "$UTIL_SCRIPT_DIR")
+# Source the config file using an absolute path
+source "$(dirname "$(readlink -f "$0")")/../path-config.sh"
 
 # Get the choice as an argument, or ask the user if not provided
 if [ -z "$1" ]; then
@@ -16,20 +15,29 @@ else
 fi
 
 # Compute the WORKING_DIR based on the choice.
-if [[ $choice == 1 ]]; then
-    WORKING_DIR="$ROOT_DIR/prod"
-    elif [[ $choice == 2 ]]; then
-    WORKING_DIR="$ROOT_DIR/preprod"
-    elif [[ $choice == 3 ]]; then
-    WORKING_DIR="$ROOT_DIR/staging"
-else
+case "$choice" in
+1) WORKING_DIR="$PLAYER_ROOT_DIR/prod" ;;
+2) WORKING_DIR="$PLAYER_ROOT_DIR/preprod" ;;
+3) WORKING_DIR="$PLAYER_ROOT_DIR/staging" ;;
+*)
     echo "Invalid choice. Exiting."
+    exit 1
+    ;;
+esac
+
+# Ensure the service files exist before copying
+if [ ! -f "$PLAYER_SYSTEMD_DIR/slideshow-player.service" ] || [ ! -f "$PLAYER_SYSTEMD_DIR/chromium-log-monitor.service" ]; then
+    echo "Error: One or more service files do not exist in $PLAYER_SYSTEMD_DIR"
     exit 1
 fi
 
 # Copy the service files to /etc/systemd/system/ and manage their states
-sudo cp "$ROOT_DIR/systemd/slideshow-player.service" /etc/systemd/system/
-sudo cp "$ROOT_DIR/systemd/chromium-log-monitor.service" /etc/systemd/system/
+sudo cp "$PLAYER_SYSTEMD_DIR/slideshow-player.service" /etc/systemd/system/
+sudo cp "$PLAYER_SYSTEMD_DIR/chromium-log-monitor.service" /etc/systemd/system/
+
+# Replace placeholders in the service files
+replace_placeholders "/etc/systemd/system/slideshow-player.service"
+replace_placeholders "/etc/systemd/system/chromium-log-monitor.service"
 
 # Replace the loaded slideshow-player.service with the chosen release
 sudo sed -i "s|ExecStart=.*|ExecStart=$WORKING_DIR/dist/linux/slideshow-player|" /etc/systemd/system/slideshow-player.service
@@ -41,8 +49,6 @@ sudo systemctl enable slideshow-player.service
 sudo systemctl enable chromium-log-monitor.service
 sudo systemctl restart slideshow-player.service
 
-# Check and print the status of the services
-slideshow_status=$(sudo systemctl is-active slideshow-player.service)
-chromium_log_status=$(sudo systemctl is-active chromium-log-monitor.service)
-echo "slideshow-player.service is $slideshow_status"
-echo "chromium-log-monitor.service is $chromium_log_status"
+# Print the status of the services
+print_service_status "slideshow-player.service"
+print_service_status "chromium-log-monitor.service"

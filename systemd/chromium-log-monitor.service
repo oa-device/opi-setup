@@ -7,7 +7,7 @@ After=graphical.target
 [Service]
 Type=simple
 User=orangepi 
-ExecStart=/home/orangepi/player/util-scripts/chromium-log-monitor
+ExecStart=%PLAYER_UTIL_SCRIPTS_DIR%/chromium-log-monitor
 Restart=on-failure
 RestartSec=5
 StandardOutput=journal

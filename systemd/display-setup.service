@@ -7,11 +7,11 @@ Type=simple
 User=orangepi
 Environment=WAYLAND_DISPLAY=wayland-0
 Environment=XDG_RUNTIME_DIR=/run/user/1000
-ExecStart=/bin/bash /home/orangepi/player/util-scripts/display.sh
+ExecStart=/bin/bash %PLAYER_UTIL_SCRIPTS_DIR%/display.sh
 Restart=on-failure
 RestartSec=3
-StandardOutput=file:/home/orangepi/player/logs/display_setup.log
-StandardError=file:/home/orangepi/player/logs/display_setup.log
+StandardOutput=file:%PLAYER_LOGS_DIR%/display_setup.log
+StandardError=file:%PLAYER_LOGS_DIR%/display_setup.log
 
 [Install]
 WantedBy=graphical.target

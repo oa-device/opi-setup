@@ -8,7 +8,7 @@ Type=simple
 User=orangepi
 Environment=DISPLAY=:0
 ExecStartPre=/bin/sleep 5
-ExecStart=/home/orangepi/player/prod/dist/linux/slideshow-player
+ExecStart=%PLAYER_ROOT_DIR%/prod/dist/linux/slideshow-player
 Restart=on-failure
 RestartSec=5
 StandardOutput=null

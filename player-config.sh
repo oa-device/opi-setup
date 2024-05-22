@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Source the config file
+source "$(dirname "$(readlink -f "$0")")/path-config.sh"
+
 # Functions
 get_current_release() {
     local SERVICE_FILE="/etc/systemd/system/slideshow-player.service"
@@ -15,9 +18,9 @@ get_current_release() {
 set_choice_based_on_current_release() {
     local CURRENT_RELEASE=$1
     case "$CURRENT_RELEASE" in
-        "prod") echo 1;;
-        "preprod") echo 2;;
-        "staging") echo 3;;
+    "prod") echo 1 ;;
+    "preprod") echo 2 ;;
+    "staging") echo 3 ;;
     esac
 }
 
@@ -39,59 +42,74 @@ prompt_for_directory_choice() {
                 choice=$(set_choice_based_on_current_release "$CURRENT_RELEASE")
             else
                 case "$choice" in
-                    1) CURRENT_RELEASE="prod";;
-                    2) CURRENT_RELEASE="preprod";;
-                    3) CURRENT_RELEASE="staging";;
-                    *) echo "Invalid choice. Please enter a valid choice (1-3):";;
+                1) CURRENT_RELEASE="prod" ;;
+                2) CURRENT_RELEASE="preprod" ;;
+                3) CURRENT_RELEASE="staging" ;;
+                *) echo "Invalid choice. Please enter a valid choice (1-3):" ;;
                 esac
             fi
         fi
-        WORKING_DIR="$ROOT_DIR/$CURRENT_RELEASE"
+        WORKING_DIR="$PLAYER_ROOT_DIR/$CURRENT_RELEASE"
         return
     else
         while true; do
             read -p "Enter your choice (1-3): " choice
             case $choice in
-                1) WORKING_DIR="$ROOT_DIR/prod"; break;;
-                2) WORKING_DIR="$ROOT_DIR/preprod"; break;;
-                3) WORKING_DIR="$ROOT_DIR/staging"; break;;
-                *) echo "Invalid choice. Please enter a valid choice (1-3):";;
+            1)
+                WORKING_DIR="$PLAYER_ROOT_DIR/prod"
+                break
+                ;;
+            2)
+                WORKING_DIR="$PLAYER_ROOT_DIR/preprod"
+                break
+                ;;
+            3)
+                WORKING_DIR="$PLAYER_ROOT_DIR/staging"
+                break
+                ;;
+            *) echo "Invalid choice. Please enter a valid choice (1-3):" ;;
             esac
         done
     fi
 }
 
 extract_release_file() {
-    local RELEASE_FILE="$RELEASES_DIR/$ENV_NAME.tar.gz"
+    local RELEASE_FILE="$PLAYER_RELEASES_DIR/$ENV_NAME.tar.gz"
     if [[ -f "$RELEASE_FILE" ]]; then
         mkdir "$WORKING_DIR"
         tar -xzf "$RELEASE_FILE" -C "$WORKING_DIR"
         echo "Extracted $ENV_NAME.tar.gz to $WORKING_DIR."
     else
-        echo "Error: $RELEASE_FILE not found in $RELEASES_DIR. Exiting."
+        echo "Error: $RELEASE_FILE not found in $PLAYER_RELEASES_DIR. Exiting."
         exit 1
     fi
 }
 
 update_slideshow_script() {
     [[ ! -x "$SLIDESHOW_SCRIPT" ]] && chmod +x "$SLIDESHOW_SCRIPT" && echo "Made slideshow-player script executable"
-    
+
     grep -qF "google-chrome-stable" "$SLIDESHOW_SCRIPT" && sed -i 's/google-chrome-stable/chromium-browser/g' "$SLIDESHOW_SCRIPT" && echo "Replaced google-chrome-stable with chromium-browser in $SLIDESHOW_SCRIPT"
-    
-    grep -qF "export DISPLAY=:0.0" "$SLIDESHOW_SCRIPT" || { sed -i "/chromium-browser --new-window/i export DISPLAY=:0.0" "$SLIDESHOW_SCRIPT"; echo "Added 'export DISPLAY=:0.0' to $SLIDESHOW_SCRIPT"; }
-    
-    grep -qF "disable-application-cache" "$SLIDESHOW_SCRIPT" || { sed -i "/chromium-browser --new-window/c\chromium-browser --new-window $CHROMIUM_ARGUMENTS --start-fullscreen --app=http://localhost:8080/?platform=device &" "$SLIDESHOW_SCRIPT"; echo "Added chromium-browser arguments to $SLIDESHOW_SCRIPT"; }
+
+    grep -qF "export DISPLAY=:0.0" "$SLIDESHOW_SCRIPT" || {
+        sed -i "/chromium-browser --new-window/i export DISPLAY=:0.0" "$SLIDESHOW_SCRIPT"
+        echo "Added 'export DISPLAY=:0.0' to $SLIDESHOW_SCRIPT"
+    }
+
+    grep -qF "disable-application-cache" "$SLIDESHOW_SCRIPT" || {
+        sed -i "/chromium-browser --new-window/c\chromium-browser --new-window $CHROMIUM_ARGUMENTS --start-fullscreen --app=http://localhost:8080/?platform=device &" "$SLIDESHOW_SCRIPT"
+        echo "Added chromium-browser arguments to $SLIDESHOW_SCRIPT"
+    }
 }
 
 generate_imei_file() {
     local CURRENT_IMEI="$HOSTNAME"
-    
+
     echo -e "\n\e[1;33m=================================================="
     echo -e "IMPORTANT: IMEI CONFIGURATION"
     echo -e "=================================================="
     echo -e "Current IMEI is set to: \e[1;31m$CURRENT_IMEI\e[0m."
     echo -e "\e[1;32mIf needed, please provide a new IMEI (press Enter to keep the current one).\e[0m"
-    
+
     if [[ -z "$SSH_TTY" ]]; then
         echo -e "\e[1;31mNon-interactive shell or SSH connection detected, using the current IMEI\e[0m."
         NEW_IMEI="$CURRENT_IMEI"
@@ -102,43 +120,40 @@ generate_imei_file() {
             NEW_IMEI="$CURRENT_IMEI"
         fi
     fi
-    
-    echo "$NEW_IMEI" > "$IMEI_FILE"
+
+    echo "$NEW_IMEI" >"$IMEI_FILE"
     echo -e "IMEI set to: \e[1;31m$NEW_IMEI\e[0m in $IMEI_FILE"
     echo -e "\e[1;33m==================================================\e[0m\n"
 }
 
 grant_chromium_camera_access() {
     PREFERENCES_FILE="$HOME/.config/chromium/Default/Preferences"
-    
+
     # Ensure that the chromium-browser is not running when modifying this file.
     pkill chromium
 
     if [[ ! -f "$PREFERENCES_FILE" ]]; then
         echo "Chromium Preferences file not found. Starting chromium-browser to create it..."
         export DISPLAY=:0.0
-        chromium-browser --disable-session-crashed-bubble --disable-infobars > /dev/null 2>&1 &
+        chromium-browser --disable-session-crashed-bubble --disable-infobars >/dev/null 2>&1 &
         echo "Waiting for Chromium to create the Preferences file..."
         while [[ ! -f "$PREFERENCES_FILE" ]]; do
-            sleep 1  # Wait for 1 second before checking again
+            sleep 1 # Wait for 1 second before checking again
         done
-        pkill chromium  # Kill Chromium so we can modify the Preferences file
+        pkill chromium # Kill Chromium so we can modify the Preferences file
     fi
 
     # Backup the original Preferences file.
     cp "$PREFERENCES_FILE" "${PREFERENCES_FILE}.backup"
 
     # Use jq to set camera permission for localhost:8080 without last_modified
-    jq '.profile.content_settings.exceptions.media_stream_camera += {"http://localhost:8080,*": {"setting": 1}}' "$PREFERENCES_FILE" > "${PREFERENCES_FILE}.tmp" && mv "${PREFERENCES_FILE}.tmp" "$PREFERENCES_FILE"
+    jq '.profile.content_settings.exceptions.media_stream_camera += {"http://localhost:8080,*": {"setting": 1}}' "$PREFERENCES_FILE" >"${PREFERENCES_FILE}.tmp" && mv "${PREFERENCES_FILE}.tmp" "$PREFERENCES_FILE"
     echo "Granted camera permission for localhost:8080 in $PREFERENCES_FILE"
 }
 
 # Main Execution
 HOSTNAME=$(hostname)
-ROOT_DIR=$(dirname "$(readlink -f "$0")")
-RELEASES_DIR="$ROOT_DIR/releases"
-LOGS_DIR="$ROOT_DIR/logs"
-mkdir -p "$LOGS_DIR"
+mkdir -p "$PLAYER_LOGS_DIR"
 
 prompt_for_directory_choice
 
@@ -170,6 +185,6 @@ grant_chromium_camera_access
 generate_imei_file
 
 # Call the release-change script
-"$ROOT_DIR/util-scripts/release-change.sh" "$choice"
+"$PLAYER_UTIL_SCRIPTS_DIR/release-change.sh" "$choice"
 
 echo "Setup complete."
