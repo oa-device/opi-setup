@@ -48,7 +48,11 @@ print_section "CONFIGURING PATH"
 if ! grep -q "export PATH=\"\$PATH:$PLAYER_UTIL_SCRIPTS_DIR\"" ~/.bashrc; then
     sed -i '/# If not running interactively, don'\''t do anything/i export PATH="$PATH:'"$PLAYER_UTIL_SCRIPTS_DIR"'"' ~/.bashrc
     echo -e "\033[1;31mThe PATH has been updated. \nPlease exit the terminal and ssh in again, or run '. ~/.bashrc' after this script finishes to apply the changes.\033[0m"
-    read -p "Press enter to continue"
+    if [[ -n "$SSH_TTY" ]]; then
+        read -p "Press enter to continue"
+    else
+        echo "Non-interactive shell detected. Please manually source ~/.bashrc after the script completes."
+    fi
 else
     echo "The PATH is already configured correctly."
 fi
