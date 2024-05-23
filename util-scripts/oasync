@@ -3,10 +3,21 @@
 # Source the config file using an absolute path
 source "$(dirname "$(readlink -f "$0")")/../path-config.sh"
 
+# Get the project directory name dynamically from PLAYER_ROOT_DIR
+project_dir_name=$(basename "$PLAYER_ROOT_DIR")
+
 # Ensure the player directory is in the correct location
-if [[ "$PLAYER_ROOT_DIR" != "$ORANGEAD_ROOT_DIR"* ]]; then
-    new_location="$ORANGEAD_ROOT_DIR/player"
-    echo "Ensuring player directory is in $new_location..."
+if [[ "$PLAYER_ROOT_DIR" != "$ORANGEAD_ROOT_DIR/$project_dir_name" ]]; then
+    new_location="$ORANGEAD_ROOT_DIR/$project_dir_name"
+    echo "Ensuring $project_dir_name directory is in $new_location..."
+
+    # If the new location already exists, rename it to .bak
+    if [ -d "$new_location" ]; then
+        mv "$new_location" "$new_location.bak" || {
+            echo "Error: Could not rename existing $new_location to $new_location.bak"
+            exit 1
+        }
+    fi
 
     mkdir -p "$ORANGEAD_ROOT_DIR"
     mv "$PLAYER_ROOT_DIR" "$new_location" || {
@@ -23,9 +34,9 @@ if [[ "$PLAYER_ROOT_DIR" != "$ORANGEAD_ROOT_DIR"* ]]; then
     PLAYER_SYSTEMD_DIR="$PLAYER_ROOT_DIR/systemd"
     PLAYER_UTIL_SCRIPTS_DIR="$PLAYER_ROOT_DIR/util-scripts"
 
-    echo "Player directory ensured in correct location."
+    echo "$project_dir_name directory moved to $new_location"
 else
-    echo "Player directory is already in the correct location."
+    echo "$project_dir_name directory is already in the correct location."
 fi
 
 # Define the directories to include in the stash
