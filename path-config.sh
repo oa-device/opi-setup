@@ -1,3 +1,6 @@
+# Define the root directory for the Orangead projects
+ORANGEAD_ROOT_DIR="$HOME/Orangead"
+
 # Define the root directory for the player project
 PLAYER_ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

@@ -2,8 +2,7 @@
 
 # Set default values
 DEFAULT_USERNAME="orangepi"
-DEFAULT_DEST_DIR="/home/orangepi/player"
-# DEFAULT_DEST_DIR="/home/orangepi/Orangead/player"
+DEFAULT_DEST_DIR="/home/orangepi/Orangead/player"
 
 # If command-line arguments are provided, use them. Otherwise, ask for input.
 if [ -n "$1" ]; then

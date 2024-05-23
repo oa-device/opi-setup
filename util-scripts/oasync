@@ -3,6 +3,31 @@
 # Source the config file using an absolute path
 source "$(dirname "$(readlink -f "$0")")/../path-config.sh"
 
+# Ensure the player directory is in the correct location
+if [[ "$PLAYER_ROOT_DIR" != "$ORANGEAD_ROOT_DIR"* ]]; then
+    new_location="$ORANGEAD_ROOT_DIR/player"
+    echo "Ensuring player directory is in $new_location..."
+
+    mkdir -p "$ORANGEAD_ROOT_DIR"
+    mv "$PLAYER_ROOT_DIR" "$new_location" || {
+        echo "Error: Could not move $PLAYER_ROOT_DIR to $new_location"
+        exit 1
+    }
+
+    # Update PLAYER_ROOT_DIR to the new location
+    PLAYER_ROOT_DIR="$new_location"
+    PLAYER_RELEASES_DIR="$PLAYER_ROOT_DIR/releases"
+    PLAYER_LOGS_DIR="$PLAYER_ROOT_DIR/logs"
+    PLAYER_CONFIG_DIR="$PLAYER_ROOT_DIR/config"
+    PLAYER_INIT_SCRIPTS_DIR="$PLAYER_ROOT_DIR/init-scripts"
+    PLAYER_SYSTEMD_DIR="$PLAYER_ROOT_DIR/systemd"
+    PLAYER_UTIL_SCRIPTS_DIR="$PLAYER_ROOT_DIR/util-scripts"
+
+    echo "Player directory ensured in correct location."
+else
+    echo "Player directory is already in the correct location."
+fi
+
 # Define the directories to include in the stash
 dirs_to_exclude="
 $PLAYER_CONFIG_DIR/

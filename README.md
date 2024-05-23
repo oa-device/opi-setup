@@ -12,6 +12,9 @@ Key scripts and their purposes in the OrangeAd Player project:
 - `oaplayer` (`player-config.sh`): Manages the Player app, including release selection and autorun configuration. After the initial `setup.sh` has been run, use `oaplayer` for easy access.
 - `oasync`: A utility for updating the project from the Git repository while preserving local `config/` folder changes. It stashes local changes, pulls updates, reapplies the stash, and then runs `oasetup` and `oaplayer`.
 - `oadisplay`: Edit the `config/display.conf` file with expected display resolution and orientation settings. The script also rerun `display.sh` to apply the changes.
+- `oalogcl`: Cleans up old logs in the `chromium_log` and `watchdog` directories, removing files older than 30 days to free up space.
+- `oasvc`: Checks and prints the status of all systemd services related to the player, including `slideshow-player.service` and others in the `systemd/` directory.
+- `hostname-change.sh`: Change the device hostname to match the project and device number.
 - `sreboot`: Reboots the device.
 
 ## Auto-Run Processes on Boot
@@ -28,13 +31,13 @@ Services configured to run automatically on boot:
 ### How to install the Player app?
 
 ```bash
-git clone https://github.com/oa-device/opi-setup.git ~/player
+git clone https://github.com/oa-device/opi-setup.git ~/Orangead/player
 ```
 
 For development purpose:
 
 ```bash
-git clone -b dev https://github.com/oa-device/opi-setup.git ~/player
+git clone -b dev https://github.com/oa-device/opi-setup.git ~/Orangead/player
 ```
 
 ### How to quickly update the project?
@@ -67,7 +70,7 @@ oaplayer
 sreboot
 ```
 
-### What to do if 'oa' commands cannot be found?
+### What to do if any of those 'oa...' commands cannot be found?
 
 If any of the `oa` commands cannot be found, as shown below:
 
@@ -78,7 +81,7 @@ orangepi@opi-kai:~$ oasetup
 
 Please follow these steps:
 
-- Run the `setup.sh` script directly inside the `~/player` directory.
+- Run the `setup.sh` script directly inside the `~/Orangead/player` directory.
 - Exit the terminal then ssh into the machine again. Alternatively, you can run `source ~/.bashrc`.
 
 ## Onboarding New OrangePi
@@ -120,13 +123,13 @@ The default username and password for the OrangePi 5B is `orangepi` and `orangep
 Clone the repository directly on the OrangePi 5B.
 
 ```bash
-git clone https://github.com/oa-device/opi-setup.git ~/player
+git clone https://github.com/oa-device/opi-setup.git ~/Orangead/player
 ```
 
 #### 1.4. Install all the necessary packages
 
 ```bash
-cd ~/player
+cd ~/Orangead/player
 ./setup.sh
 ```
 
@@ -136,9 +139,9 @@ cd ~/player
 
 Follow the guide Brown already made on Confluence to migrate the OS from the SD card to the eMMC. In brief, the steps are:
 
-- On the corner left, select `Applications -> Accessories -> balenaEtcher` and choose to **Clone drive**
-- Select the SD card as the source (normally the SD card is the /dev/mmcblk1)
-- Select the eMMC as the destination (normally the eMMC is the /dev/mmcblk0)
+- On the corner bottom left, select `Applications -> Accessories -> balenaEtcher` and choose to **Clone drive**
+- Select the SD card as the source (normally the SD card is the `/dev/mmcblk1`)
+- Select the eMMC as the destination (normally the eMMC is the `/dev/mmcblk0`)
 - Click **Continue** and wait for the process to finish
 - Shut down the device and remove the SD card. Boot up the device again and it should boot from the eMMC
 
@@ -190,7 +193,7 @@ oaplayer
 Run these commands in each device's terminal:
 
 ```bash
-cd ~/player
+cd ~/Orangead/player
 git remote set-url origin https://github.com/oa-device/opi-setup.git
 git remote -v
 ```
