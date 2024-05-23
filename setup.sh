@@ -71,7 +71,7 @@ print_section "CONFIGURING WIFI"
 "$PLAYER_UTIL_SCRIPTS_DIR/wifi.sh"
 
 print_section "AUTO UPDATE AND REBOOT DAILY AT 3AM"
-echo "0 3 * * * . $HOME/.bashrc; $PLAYER_UTIL_SCRIPTS_DIR/oasync; /sbin/reboot" | crontab -
+echo "0 3 * * * $PLAYER_UTIL_SCRIPTS_DIR/oasync; /sbin/reboot" | crontab -
 echo "Current crontab setting:"
 crontab -l | sed 's/^/\t/'
 
