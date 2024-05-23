@@ -1,19 +1,18 @@
 #!/bin/bash
 
-# Define the log directory and file
-LOGS_DIR="/home/orangepi/player/logs"
+# Source the config file using an absolute path
+source "$(dirname "$(readlink -f "$0")")/../path-config.sh"
 
 # Define the directories to check
 declare -a dirs=("chromium_log" "watchdog")
 
 # Loop through the directories
-for dir in "${dirs[@]}"
-do
+for dir in "${dirs[@]}"; do
   # Check if the directory exists
-  if [ -d "$LOGS_DIR/$dir" ]; then
+  if [ -d "$PLAYER_LOGS_DIR/$dir" ]; then
     # Find files in the directory that are older than 30 days and delete them
-    find "$LOGS_DIR/$dir" -type f -mtime +30 -exec rm {} \;
+    find "$PLAYER_LOGS_DIR/$dir" -type f -mtime +30 -exec rm {} \;
   else
-    echo "Directory $LOGS_DIR/$dir does not exist"
+    echo "Directory $PLAYER_LOGS_DIR/$dir does not exist"
   fi
 done

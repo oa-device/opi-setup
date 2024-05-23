@@ -165,7 +165,7 @@ echo "Power settings:"
 gsettings list-recursively org.gnome.settings-daemon.plugins.power | sed 's/^/\t/'
 
 print_section "CLEANING UP KEYRING FILES"
-KEYRING_DIR="/home/orangepi/.local/share/keyrings"
+KEYRING_DIR="$HOME/.local/share/keyrings"
 # Rename keyring files by appending .bak extension
 find "$KEYRING_DIR" -type f -name 'Default_keyring*.keyring' ! -name 'Default_keyring.keyring' -exec mv {} {}.bak \;
 # Log the final state of keyring files

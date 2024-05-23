@@ -1,14 +1,16 @@
 #!/bin/bash
 
-# Dynamically get the current directory of the script
-UTIL_SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-DISPLAY_CONFIG_FILE="$(dirname "$UTIL_SCRIPT_DIR")/config/display.conf"
+# Source the config file using an absolute path
+source "$(dirname "$(readlink -f "$0")")/../path-config.sh"
+
+# Define the DISPLAY_CONFIG_FILE using the sourced paths
+DISPLAY_CONFIG_FILE="$PLAYER_CONFIG_DIR/display.conf"
 
 # Read values from config file
 source "$DISPLAY_CONFIG_FILE"
 
 # Define the log directory and file
-WATCHDOG_LOG_DIR="/home/orangepi/player/logs/watchdog"
+WATCHDOG_LOG_DIR="$PLAYER_LOGS_DIR/watchdog"
 mkdir -p "$WATCHDOG_LOG_DIR"
 TODAY=$(date +"%Y-%m-%d")
 WATCHDOG_LOG_FILE="$WATCHDOG_LOG_DIR/$TODAY.log"
@@ -28,13 +30,13 @@ MSG_LENGTH=${#LOG_START_MSG}
 LINE=$(printf '%*s' "$MSG_LENGTH" | tr ' ' '#')
 
 # Log the script run with timestamp. Add a new line before the log entry.
-echo -e "\n$LINE\n$LOG_START_MSG\n$LINE\n" >> "$WATCHDOG_LOG_FILE"
+echo -e "\n$LINE\n$LOG_START_MSG\n$LINE\n" >>"$WATCHDOG_LOG_FILE"
 
 check_lightdm_service() {
     log_message "Checking lightdm service..."
     if systemctl status lightdm.service | grep -q "pam_succeed_if(lightdm:auth)"; then
         log_message "lightdm service check failed."
-        log_message "$(systemctl status --no-pager lightdm.service)"  # Log the status of the service
+        log_message "$(systemctl status --no-pager lightdm.service)" # Log the status of the service
         return 1
     else
         log_message "lightdm service check passed."
@@ -44,16 +46,16 @@ check_lightdm_service() {
 
 check_display() {
     log_message "Checking display setup..."
-    output=$(/usr/bin/python3 "${UTIL_SCRIPT_DIR}/gnome-randr.py" | cat -A)
-    if [[ $output == *"logical monitor 0"* ]] && \
-       [[ $output =~ "$PREFERRED_RESOLUTION".*"$PREFERRED_RATE.00*".*"$" ]] && \
-       [[ $output == *"rotation: $ROTATE"* ]] && \
-       [[ $output == *"scale: $SCALE"* ]]; then
+    output=$(/usr/bin/python3 "$PLAYER_UTIL_SCRIPTS_DIR/gnome-randr.py" | cat -A)
+    if [[ $output == *"logical monitor 0"* ]] &&
+        [[ $output =~ "$PREFERRED_RESOLUTION".*"$PREFERRED_RATE.00*".*"$" ]] &&
+        [[ $output == *"rotation: $ROTATE"* ]] &&
+        [[ $output == *"scale: $SCALE"* ]]; then
         log_message "Display setup check passed."
         return 0
     else
         log_message "Display setup check failed."
-        log_message "Display setup is: $output"  # Log the display setup
+        log_message "Display setup is: $output" # Log the display setup
         return 1
     fi
 }
@@ -62,31 +64,31 @@ check_display() {
 ACTIVATING_COUNTER=0
 check_slideshow_service() {
     log_message "Checking slideshow-player service..."
-    service_status=$(systemctl is-active slideshow-player.service)  # Store the status of the service
+    service_status=$(systemctl is-active slideshow-player.service) # Store the status of the service
     if [[ $service_status == "active" ]]; then
         # Check if chromium-browser is running as part of the service
         if systemctl status slideshow-player.service | grep -q "chromium-browser"; then
             log_message "slideshow-player service check passed."
-            ACTIVATING_COUNTER=0  # Reset the counter
+            ACTIVATING_COUNTER=0 # Reset the counter
             return 0
         else
             log_message "slideshow-player service is running but chromium-browser is not started."
-            log_message "$(systemctl status --no-pager slideshow-player.service)"  # Log the status of the service
+            log_message "$(systemctl status --no-pager slideshow-player.service)" # Log the status of the service
             return 1
         fi
     elif [[ $service_status == "activating" ]]; then
-        ACTIVATING_COUNTER=$((ACTIVATING_COUNTER+1))  # Increment the counter
+        ACTIVATING_COUNTER=$((ACTIVATING_COUNTER + 1)) # Increment the counter
         if [[ $ACTIVATING_COUNTER -le 3 ]]; then
             log_message "slideshow-player service is activating. Waiting..."
             return 0
         else
             log_message "slideshow-player service is still activating after 30 seconds. Restarting..."
-            ACTIVATING_COUNTER=0  # Reset the counter
+            ACTIVATING_COUNTER=0 # Reset the counter
             return 1
         fi
     else
         log_message "slideshow-player service check failed."
-        log_message "slideshow-player service is: $service_status"  # Log the status of the service
+        log_message "slideshow-player service is: $service_status" # Log the status of the service
         return 1
     fi
 }

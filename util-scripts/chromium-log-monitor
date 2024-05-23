@@ -1,8 +1,11 @@
 #!/bin/bash
 
-# Chromium Log Monitoring Script
-CHROMIUM_LOG_DIR="/home/orangepi/player/logs/chromium_log"
-CHROME_LOG_FILE="/home/orangepi/.config/chromium/chrome_debug.log"
+# Source the config file using an absolute path
+source "$(dirname "$(readlink -f "$0")")/../path-config.sh"
+
+# Define the log directories and files using the sourced paths
+CHROMIUM_LOG_DIR="$PLAYER_LOGS_DIR/chromium_log"
+CHROME_LOG_FILE="$HOME/.config/chromium/chrome_debug.log"
 TODAY=$(date +"%Y-%m-%d")
 CONSOLE_LOG_FILE="$CHROMIUM_LOG_DIR/$TODAY.log"
 
@@ -19,11 +22,11 @@ MSG_LENGTH=${#LOG_START_MSG}
 LINE=$(printf '%*s' "$MSG_LENGTH" | tr ' ' '#')
 
 # Log the script run with timestamp. Add a new line before the log entry.
-echo -e "\n$LINE\n$LOG_START_MSG\n$LINE\n" >> "$CONSOLE_LOG_FILE"
+echo -e "\n$LINE\n$LOG_START_MSG\n$LINE\n" >>"$CONSOLE_LOG_FILE"
 
 # Wait for slideshow-player to start and Chromium log file to exist
 while true; do
-    if pgrep "slideshow-playe" > /dev/null; then
+    if pgrep "slideshow-playe" >/dev/null; then
         if [ -f "$CHROME_LOG_FILE" ]; then
             break
         else
@@ -36,4 +39,4 @@ while true; do
 done
 
 # Continuously extract console logs from Chromium's log file to the daily log file
-tail --follow=name "$CHROME_LOG_FILE" | grep --line-buffered 'INFO:CONSOLE' >> "$CONSOLE_LOG_FILE"
+tail --follow=name "$CHROME_LOG_FILE" | grep --line-buffered 'INFO:CONSOLE' >>"$CONSOLE_LOG_FILE"

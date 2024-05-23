@@ -1,13 +1,13 @@
 #!/bin/bash
 
-UTIL_SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-ROOT_DIR="$(dirname "$UTIL_SCRIPT_DIR")"
+# Source the config file using an absolute path
+source "$(dirname "$(readlink -f "$0")")/../path-config.sh"
 
 # Grant passwordless sudo for all commands temporarily
-echo "orangepi ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/temp_orangepi > /dev/null
+echo "orangepi ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/temp_orangepi >/dev/null
 
 # Run the original setup script
-"$ROOT_DIR/setup.sh"
+"$PLAYER_ROOT_DIR/setup.sh"
 
 # Remove the temporary passwordless sudo
 sudo rm /etc/sudoers.d/temp_orangepi

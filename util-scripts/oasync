@@ -1,12 +1,18 @@
 #!/bin/bash
 
+# Source the config file using an absolute path
+source "$(dirname "$(readlink -f "$0")")/../path-config.sh"
+
 # Define the directories to include in the stash
 dirs_to_exclude="
-config/
+$PLAYER_CONFIG_DIR/
 "
 
-# Navigate to the /home/orangepi/player directory
-cd /home/orangepi/player || { echo "Error: Could not navigate to /home/orangepi/player"; exit 1; }
+# Navigate to the player root directory
+cd "$PLAYER_ROOT_DIR" || {
+    echo "Error: Could not navigate to $PLAYER_ROOT_DIR"
+    exit 1
+}
 
 # Get the current date and time
 current_date=$(date +"%Y-%m-%d %H:%M:%S")
@@ -19,33 +25,60 @@ if git diff --quiet; then
     echo "No changes to stash"
 else
     # Create a temporary stash
-    git stash push -u -m "Temp stash for comparison" -- $dirs_to_exclude > /dev/null 2>&1 || { echo "Error: Could not create temporary stash"; exit 1; }
+    git stash push -u -m "Temp stash for comparison" -- $dirs_to_exclude >/dev/null 2>&1 || {
+        echo "Error: Could not create temporary stash"
+        exit 1
+    }
 
     # Check if the temporary stash is the same as the last stash
     if git stash list | grep -q 'stash@{1}' && git diff stash@{0} stash@{1} --quiet; then
         echo "Changes in directories are the same as the last stash"
         # Drop the temporary stash
-        git stash drop stash@{0} > /dev/null 2>&1 || { echo "Error: Could not drop temporary stash"; exit 1; }
+        git stash drop stash@{0} >/dev/null 2>&1 || {
+            echo "Error: Could not drop temporary stash"
+            exit 1
+        }
     else
         # Apply the temporary stash
-        git stash apply stash@{0} > /dev/null 2>&1 || { echo "Error: Could not apply temporary stash"; exit 1; }
+        git stash apply stash@{0} >/dev/null 2>&1 || {
+            echo "Error: Could not apply temporary stash"
+            exit 1
+        }
         # Create a new stash with the desired message
-        git stash push -u -m "Date: $current_date, Commit: $current_commit" -- $dirs_to_exclude > /dev/null 2>&1 || { echo "Error: Could not create new stash"; exit 1; }
+        git stash push -u -m "Date: $current_date, Commit: $current_commit" -- $dirs_to_exclude >/dev/null 2>&1 || {
+            echo "Error: Could not create new stash"
+            exit 1
+        }
         # Drop the temporary stash
-        git stash drop stash@{1} > /dev/null 2>&1 || { echo "Error: Could not drop temporary stash"; exit 1; }
+        git stash drop stash@{1} >/dev/null 2>&1 || {
+            echo "Error: Could not drop temporary stash"
+            exit 1
+        }
     fi
 fi
 
 # Pull the latest changes from the repository
-git pull || { echo "Error: Could not pull latest changes"; exit 1; }
+git pull || {
+    echo "Error: Could not pull latest changes"
+    exit 1
+}
 
 # Apply the stashed changes
 if git stash list | grep -q 'stash@{0}'; then
-    git stash apply stash@{0} || { echo "Error: Could not apply stashed changes"; exit 1; }
+    git stash apply stash@{0} || {
+        echo "Error: Could not apply stashed changes"
+        exit 1
+    }
 else
     echo "No stashes to apply"
 fi
 
 # Run oasetup and oaplayer
-oasetup || { echo "Error: Could not run oasetup"; exit 1; }
-oaplayer || { echo "Error: Could not run oaplayer"; exit 1; }
+"$PLAYER_UTIL_SCRIPTS_DIR/oasetup" || {
+    echo "Error: Could not run oasetup"
+    exit 1
+}
+"$PLAYER_UTIL_SCRIPTS_DIR/oaplayer" || {
+    echo "Error: Could not run oaplayer"
+    exit 1
+}

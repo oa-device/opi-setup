@@ -3,6 +3,7 @@
 # Set default values
 DEFAULT_USERNAME="orangepi"
 DEFAULT_DEST_DIR="/home/orangepi/player"
+# DEFAULT_DEST_DIR="/home/orangepi/Orangead/player"
 
 # If command-line arguments are provided, use them. Otherwise, ask for input.
 if [ -n "$1" ]; then
@@ -19,28 +20,28 @@ else
 fi
 
 # Determine the directory of the script
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # If both username and IP are given, run the rsync command
 if [ -n "$USERNAME" ] && [ -n "$IP" ]; then
     # Set the destination path
     DEST="$USERNAME@$IP:$DEFAULT_DEST_DIR"
-    
+
     # Run the rsync command with --delete option and exclusions
     rsync -av -e ssh --progress \
-    --delete \
-    --exclude='.DS_Store' \
-    --exclude='README.md' \
-    --exclude='.git/' \
-    --exclude='.gitignore' \
-    --exclude='dev.sh' \
-    --exclude='config/' \
-    --exclude='prod/' \
-    --exclude='preprod/' \
-    --exclude='staging/' \
-    --exclude='logs/*' \
-    --include='logs/.placeholder' \
-    "$DIR/" "$DEST"
+        --delete \
+        --exclude='.DS_Store' \
+        --exclude='README.md' \
+        --exclude='.git/' \
+        --exclude='.gitignore' \
+        --exclude='dev.sh' \
+        --exclude='config/' \
+        --exclude='prod/' \
+        --exclude='preprod/' \
+        --exclude='staging/' \
+        --exclude='logs/*' \
+        --include='logs/.placeholder' \
+        "$DIR/" "$DEST"
 else
     echo "Both username and IP must be provided!"
     exit 1

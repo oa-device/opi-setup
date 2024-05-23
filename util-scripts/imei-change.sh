@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# Get the directory of the current script's directory and the root directory
-UTIL_SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
-ROOT_DIR=$(dirname "$UTIL_SCRIPT_DIR")
+# Source the config file using an absolute path
+source "$(dirname "$(readlink -f "$0")")/../path-config.sh"
 
 # Define the RELEASES array
 RELEASES=("prod" "preprod" "staging")
@@ -18,9 +17,9 @@ fi
 
 # Loop through the releases and update imei.txt if the directory exists
 for release in "${RELEASES[@]}"; do
-    IMEI_FILE="$ROOT_DIR/$release/dist/Documents/imei.txt"
-    if [ -d "$ROOT_DIR/$release" ] && [ -f "$IMEI_FILE" ]; then
-        echo "$new_imei" > "$IMEI_FILE"
+    IMEI_FILE="$PLAYER_ROOT_DIR/$release/dist/Documents/imei.txt"
+    if [ -d "$PLAYER_ROOT_DIR/$release" ] && [ -f "$IMEI_FILE" ]; then
+        echo "$new_imei" >"$IMEI_FILE"
         echo "Updated IMEI for $release release."
     fi
 done
