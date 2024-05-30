@@ -3,5 +3,11 @@
 # Source the config file using an absolute path
 source "$(dirname "$(readlink -f "$0")")/../path-config.sh"
 
+# Grant passwordless sudo for all commands temporarily
+echo "orangepi ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/temp_orangepi >/dev/null
+
 # Run the player configuration script
 "$PLAYER_ROOT_DIR/player-config.sh"
+
+# Remove the temporary passwordless sudo
+sudo rm /etc/sudoers.d/temp_orangepi

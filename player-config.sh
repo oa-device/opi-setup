@@ -127,28 +127,19 @@ generate_imei_file() {
 }
 
 grant_chromium_camera_access() {
-    PREFERENCES_FILE="$HOME/.config/chromium/Default/Preferences"
+    POLICY_FILE="/etc/chromium-browser/policies/managed/oa_camera_policy.json"
 
-    # Ensure that the chromium-browser is not running when modifying this file.
-    pkill chromium
+    # Ensure the policy directory exists
+    sudo mkdir -p /etc/chromium-browser/policies/managed
 
-    if [[ ! -f "$PREFERENCES_FILE" ]]; then
-        echo "Chromium Preferences file not found. Starting chromium-browser to create it..."
-        export DISPLAY=:0.0
-        chromium-browser --disable-session-crashed-bubble --disable-infobars >/dev/null 2>&1 &
-        echo "Waiting for Chromium to create the Preferences file..."
-        while [[ ! -f "$PREFERENCES_FILE" ]]; do
-            sleep 1 # Wait for 1 second before checking again
-        done
-        pkill chromium # Kill Chromium so we can modify the Preferences file
-    fi
-
-    # Backup the original Preferences file.
-    cp "$PREFERENCES_FILE" "${PREFERENCES_FILE}.backup"
-
-    # Use jq to set camera permission for localhost:8080 without last_modified
-    jq '.profile.content_settings.exceptions.media_stream_camera += {"http://localhost:8080,*": {"setting": 1}}' "$PREFERENCES_FILE" >"${PREFERENCES_FILE}.tmp" && mv "${PREFERENCES_FILE}.tmp" "$PREFERENCES_FILE"
-    echo "Granted camera permission for localhost:8080 in $PREFERENCES_FILE"
+    # Create or update the policy file
+    sudo bash -c "cat > $POLICY_FILE <<EOL
+{
+  \"URLAllowlist\": [\"http://localhost:8080\"],
+  \"VideoCaptureAllowedUrls\": [\"http://localhost:8080\"]
+}
+EOL"
+    echo "Policy file created at $POLICY_FILE to allow camera access for localhost:8080 in incognito mode."
 }
 
 # Main Execution
@@ -160,7 +151,7 @@ prompt_for_directory_choice
 ENV_NAME=$(basename "$WORKING_DIR")
 SLIDESHOW_SCRIPT="$WORKING_DIR/dist/linux/slideshow-player"
 IMEI_FILE="$WORKING_DIR/dist/Documents/imei.txt"
-CHROMIUM_ARGUMENTS=" --enable-logging --v=1 --autoplay-policy=no-user-gesture-required --no-first-run --hide-crash-restore-bubble --aggressive-cache-discard --disable-application-cache --media-cache-size=1 --disk-cache-size=1"
+CHROMIUM_ARGUMENTS=" --incognito --enable-logging --v=1 --autoplay-policy=no-user-gesture-required --no-first-run --hide-crash-restore-bubble --aggressive-cache-discard --disable-application-cache --media-cache-size=1 --disk-cache-size=1"
 
 # Processes name purposely truncated to 15 characters to match systemd service name
 pkill slideshow-playe
