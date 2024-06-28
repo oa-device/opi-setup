@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "========== SETTING UP CHROMIUM =========="
+echo "---------- SETTING UP CHROMIUM ----------"
 
 # Function to install or update Chromium
 install_or_update_chromium() {
@@ -32,4 +32,4 @@ else
     install_or_update_chromium
 fi
 
-echo "========== CHROMIUM SETUP COMPLETE =========="
+echo "---------- CHROMIUM SETUP COMPLETE ----------"

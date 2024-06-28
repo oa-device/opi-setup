@@ -1,9 +1,9 @@
 #!/bin/bash
 
-echo "========== SETTING UP SPEEDTEST-CLI =========="
+echo "---------- SETTING UP SPEEDTEST-CLI ----------"
 
 # Check if speedtest is installed
-if ! command -v speedtest &> /dev/null; then
+if ! command -v speedtest &>/dev/null; then
     echo "Adding Ookla repository..."
     curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | sudo bash
 
@@ -15,6 +15,6 @@ fi
 
 # Accept Speedtest license agreement
 echo "Accepting Speedtest license agreement..."
-timeout 0.5s speedtest --accept-license > /dev/null 2>&1 || true
+timeout 0.5s speedtest --accept-license >/dev/null 2>&1 || true
 
-echo "========== SPEEDTEST-CLI SETUP COMPLETE =========="
+echo "---------- SPEEDTEST-CLI SETUP COMPLETE ----------"

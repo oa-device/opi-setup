@@ -3,11 +3,6 @@
 # Source the path configuration file
 source "$(dirname "$(readlink -f "$0")")/path-config.sh"
 
-# Function to print section headers for clarity
-print_section() {
-    echo -e "\n\e[1;33m========== $1 ==========\e[0m"
-}
-
 print_section "CONFIGURE SUDO RIGHTS FOR ORANGEPI USER"
 BINARIES=(
     "/usr/bin/apt"
@@ -27,6 +22,7 @@ BINARIES=(
     "/usr/sbin/chpasswd"
     "/usr/sbin/reboot"
     "/usr/sbin/resize2fs"
+    "/usr/sbin/ufw"
 )
 SUDO_RIGHTS="orangepi ALL=(ALL) NOPASSWD: ${BINARIES[0]}"
 for binary in "${BINARIES[@]:1}"; do
@@ -222,7 +218,9 @@ sudo apt-get upgrade --fix-missing -y -o Dpkg::Options::="--force-confnew"
 print_section "INSTALLING REQUIRED PACKAGES"
 for script in "$PLAYER_INIT_SCRIPTS_DIR"/*.sh; do
     if [ -f "$script" ] && [ -x "$script" ]; then
-        echo "Executing $script..."
+        # Get the relative path by removing the PLAYER_ROOT_DIR part
+        relative_path="${script#$PLAYER_ROOT_DIR/}"
+        echo "Executing $relative_path..."
         "$script"
     fi
 done

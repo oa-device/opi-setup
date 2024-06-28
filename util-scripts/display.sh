@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "========== SETTING UP DISPLAY =========="
+echo "---------- SETTING UP DISPLAY ----------"
 
 # Source the config file using an absolute path
 source "$(dirname "$(readlink -f "$0")")/../path-config.sh"
@@ -36,4 +36,4 @@ else
     fi
 fi
 
-echo "========== DISPLAY SETUP COMPLETE =========="
+echo "---------- DISPLAY SETUP COMPLETE ----------"

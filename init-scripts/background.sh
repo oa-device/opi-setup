@@ -1,9 +1,9 @@
 #!/bin/bash
 
-echo "========== SETTING UP BACKGROUND IMAGES =========="
+echo "---------- SETTING UP BACKGROUND IMAGES ----------"
 
 # Determine current directory dynamically
-INIT_SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+INIT_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Copy all .jpg images to the Pictures folder
 find "$INIT_SCRIPT_DIR" -maxdepth 1 -type f -iname "*.jpg" -exec cp {} "$HOME/Pictures/" \;
@@ -16,10 +16,10 @@ if [[ -z "$BACKGROUND_IMAGE" ]]; then
     exit 1
 else
     echo "Setting $BACKGROUND_IMAGE as the desktop background..."
-    
+
     # Set the image as the background
     gsettings set org.gnome.desktop.background picture-uri "file://${BACKGROUND_IMAGE}"
-    
+
     if [[ $? -eq 0 ]]; then
         echo "Background successfully updated!"
     else
@@ -27,4 +27,4 @@ else
     fi
 fi
 
-echo "========== BACKGROUND IMAGES SETUP COMPLETE =========="
+echo "---------- BACKGROUND IMAGES SETUP COMPLETE ----------"

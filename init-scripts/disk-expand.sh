@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "========== EXPANDING FILESYSTEM =========="
+echo "---------- EXPANDING FILESYSTEM ----------"
 
 # Check if cloud-guest-utils is installed
 if ! dpkg -l | grep -q cloud-guest-utils; then
@@ -24,4 +24,4 @@ else
     echo "Filesystem /dev/mmcblk0p2 does not exist!"
 fi
 
-echo "========== FILESYSTEM EXPAND COMPLETE =========="
+echo "---------- FILESYSTEM EXPAND COMPLETE ----------"

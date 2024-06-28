@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "========== SETTING UP WIFI =========="
+echo "---------- SETTING UP WIFI ----------"
 
 # Check if running in a non-interactive SSH shell
 if [[ -z "$SSH_TTY" ]]; then
@@ -52,7 +52,7 @@ else
 
         # Capture the output of 'nmcli dev wifi' in a temporary file
         TEMP_FILE=$(mktemp)
-        script -q -c "nmcli dev wifi" "$TEMP_FILE" > /dev/null
+        script -q -c "nmcli dev wifi" "$TEMP_FILE" >/dev/null
 
         # Remove the first and last lines which are added by 'script' command
         sed -i '1d;$d' "$TEMP_FILE"
@@ -138,7 +138,7 @@ else
     fi
 
     # Lower the priority of all Ethernet connections starting with "Wired connection"
-    echo "========== SETTING UP ETHERNET PRIORITY =========="
+    echo "---------- SETTING UP ETHERNET PRIORITY ----------"
 
     # Loop through each "Wired connection" and set their metric higher than WiFi
     while IFS= read -r ETH_CON_NAME; do
@@ -150,4 +150,4 @@ else
     done < <(nmcli -t -f NAME con show | grep "^Wired connection")
 fi
 
-echo "========== WIFI SETUP COMPLETE =========="
+echo "---------- WIFI SETUP COMPLETE ----------"
