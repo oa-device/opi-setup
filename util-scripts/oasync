@@ -1,120 +1,155 @@
 #!/bin/bash
 
-# Source the config file using an absolute path
-source "$(dirname "$(readlink -f "$0")")/../path-config.sh"
-
-# Get the project directory name dynamically from PLAYER_ROOT_DIR
-project_dir_name=$(basename "$PLAYER_ROOT_DIR")
-
-# Ensure the player directory is in the correct location
-if [[ "$PLAYER_ROOT_DIR" != "$ORANGEAD_ROOT_DIR/$project_dir_name" ]]; then
-    new_location="$ORANGEAD_ROOT_DIR/$project_dir_name"
-    echo "Ensuring $project_dir_name directory is in $new_location..."
-
-    # If the new location already exists, rename it to .bak
-    if [ -d "$new_location" ]; then
-        mv "$new_location" "$new_location.bak" || {
-            echo "Error: Could not rename existing $new_location to $new_location.bak"
-            exit 1
-        }
-    fi
-
-    mkdir -p "$ORANGEAD_ROOT_DIR"
-    mv "$PLAYER_ROOT_DIR" "$new_location" || {
-        echo "Error: Could not move $PLAYER_ROOT_DIR to $new_location"
-        exit 1
-    }
-
-    # Update PLAYER_ROOT_DIR to the new location
-    PLAYER_ROOT_DIR="$new_location"
-    PLAYER_RELEASES_DIR="$PLAYER_ROOT_DIR/releases"
-    PLAYER_LOGS_DIR="$PLAYER_ROOT_DIR/logs"
-    PLAYER_CONFIG_DIR="$PLAYER_ROOT_DIR/config"
-    PLAYER_INIT_SCRIPTS_DIR="$PLAYER_ROOT_DIR/init-scripts"
-    PLAYER_SYSTEMD_DIR="$PLAYER_ROOT_DIR/systemd"
-    PLAYER_UTIL_SCRIPTS_DIR="$PLAYER_ROOT_DIR/util-scripts"
-
-    echo "$project_dir_name directory moved to $new_location"
-else
-    echo "$project_dir_name directory is already in the correct location."
-fi
-
-# Define the directories to include in the stash
-dirs_to_exclude="
-$PLAYER_CONFIG_DIR/
-"
-
-# Navigate to the player root directory
-cd "$PLAYER_ROOT_DIR" || {
-    echo "Error: Could not navigate to $PLAYER_ROOT_DIR"
+source "$(dirname "$(readlink -f "$0")")/../helpers.sh" || {
+    echo "Error: Could not source helpers.sh"
     exit 1
 }
 
-# Get the current date and time
-current_date=$(date +"%Y-%m-%d %H:%M:%S")
+# Function to check if required variables are set
+check_env_vars() {
+    local required_vars=("PLAYER_ROOT_DIR" "ORANGEAD_ROOT_DIR" "PLAYER_LOGS_DIR")
+    for var in "${required_vars[@]}"; do
+        if [ -z "${!var}" ]; then
+            log_error "$OASYNC_LOG_FILE" "Environment variable $var is not set"
+            exit 1
+        fi
+    done
+}
 
-# Get the short SHA of the current commit
-current_commit=$(git rev-parse --short HEAD)
+# Move project directory if needed
+move_project_directory() {
+    local project_dir_name=$(basename "$PLAYER_ROOT_DIR")
+    if [[ "$PLAYER_ROOT_DIR" != "$ORANGEAD_ROOT_DIR/$project_dir_name" ]]; then
+        local new_location="$ORANGEAD_ROOT_DIR/$project_dir_name"
+        log_info "$OASYNC_LOG_FILE" "Ensuring $project_dir_name directory is in $new_location..."
 
-# Check if there are changes to stash
-if git diff --quiet; then
-    echo "No changes to stash"
-else
-    # Create a temporary stash
-    git stash push -u -m "Temp stash for comparison" -- $dirs_to_exclude >/dev/null 2>&1 || {
-        echo "Error: Could not create temporary stash"
+        if [ -d "$new_location" ]; then
+            mv "$new_location" "$new_location.bak" || {
+                log_error "$OASYNC_LOG_FILE" "Could not rename existing $new_location to $new_location.bak"
+                exit 1
+            }
+        fi
+
+        mkdir -p "$ORANGEAD_ROOT_DIR"
+        mv "$PLAYER_ROOT_DIR" "$new_location" || {
+            log_error "$OASYNC_LOG_FILE" "Could not move $PLAYER_ROOT_DIR to $new_location"
+            exit 1
+        }
+
+        # Update PLAYER_ROOT_DIR to the new location
+        PLAYER_ROOT_DIR="$new_location"
+        PLAYER_RELEASES_DIR="$PLAYER_ROOT_DIR/releases"
+        PLAYER_LOGS_DIR="$PLAYER_ROOT_DIR/logs"
+        PLAYER_CONFIG_DIR="$PLAYER_ROOT_DIR/config"
+        PLAYER_INIT_SCRIPTS_DIR="$PLAYER_ROOT_DIR/init-scripts"
+        PLAYER_SYSTEMD_DIR="$PLAYER_ROOT_DIR/systemd"
+        PLAYER_UTIL_SCRIPTS_DIR="$PLAYER_ROOT_DIR/util-scripts"
+
+        log_info "$OASYNC_LOG_FILE" "$project_dir_name directory moved to $new_location"
+    else
+        log_info "$OASYNC_LOG_FILE" "$project_dir_name directory is already in the correct location."
+    fi
+}
+
+# Check for changes and manage stashes
+manage_stashes() {
+    local dirs_to_exclude="$PLAYER_CONFIG_DIR/"
+    cd "$PLAYER_ROOT_DIR" || {
+        log_error "$OASYNC_LOG_FILE" "Could not navigate to $PLAYER_ROOT_DIR"
         exit 1
     }
 
-    # Check if the temporary stash is the same as the last stash
-    if git stash list | grep -q 'stash@{1}' && git diff stash@{0} stash@{1} --quiet; then
-        echo "Changes in directories are the same as the last stash"
-        # Drop the temporary stash
-        git stash drop stash@{0} >/dev/null 2>&1 || {
-            echo "Error: Could not drop temporary stash"
+    local current_date=$(date +"%Y-%m-%d %H:%M:%S")
+    local current_commit=$(git rev-parse --short HEAD)
+    local current_branch=$(git symbolic-ref --short HEAD)
+
+    if [[ "$current_branch" == "dev" ]]; then
+        dirs_to_exclude=""
+    fi
+
+    if git diff --quiet; then
+        log_info "$OASYNC_LOG_FILE" "No changes to stash"
+    else
+        git stash push -u -m "Temp stash for comparison" -- $dirs_to_exclude >/dev/null 2>&1 || {
+            log_error "$OASYNC_LOG_FILE" "Could not create temporary stash"
+            exit 1
+        }
+
+        if git stash list | grep -q 'stash@{1}' && git diff stash@{0} stash@{1} --quiet; then
+            log_info "$OASYNC_LOG_FILE" "Changes in directories are the same as the last stash"
+            git stash drop stash@{0} >/dev/null 2>&1 || {
+                log_error "$OASYNC_LOG_FILE" "Could not drop temporary stash"
+                exit 1
+            }
+        else
+            git stash apply stash@{0} >/dev/null 2>&1 || {
+                log_error "$OASYNC_LOG_FILE" "Could not apply temporary stash"
+                exit 1
+            }
+            git stash push -u -m "Date: $current_date, Commit: $current_commit" -- $dirs_to_exclude >/dev/null 2>&1 || {
+                log_error "$OASYNC_LOG_FILE" "Could not create new stash"
+                exit 1
+            }
+            git stash drop stash@{1} >/dev/null 2>&1 || {
+                log_error "$OASYNC_LOG_FILE" "Could not drop temporary stash"
+                exit 1
+            }
+        fi
+    fi
+}
+
+# Pull the latest changes from the repository
+pull_latest_changes() {
+    git pull || {
+        log_error "$OASYNC_LOG_FILE" "Could not pull latest changes"
+        exit 1
+    }
+}
+
+# Apply stashed changes
+apply_stashed_changes() {
+    if git stash list | grep -q 'stash@{0}'; then
+        git stash apply stash@{0} || {
+            log_error "$OASYNC_LOG_FILE" "Could not apply stashed changes"
             exit 1
         }
     else
-        # Apply the temporary stash
-        git stash apply stash@{0} >/dev/null 2>&1 || {
-            echo "Error: Could not apply temporary stash"
-            exit 1
-        }
-        # Create a new stash with the desired message
-        git stash push -u -m "Date: $current_date, Commit: $current_commit" -- $dirs_to_exclude >/dev/null 2>&1 || {
-            echo "Error: Could not create new stash"
-            exit 1
-        }
-        # Drop the temporary stash
-        git stash drop stash@{1} >/dev/null 2>&1 || {
-            echo "Error: Could not drop temporary stash"
-            exit 1
-        }
+        log_info "$OASYNC_LOG_FILE" "No stashes to apply"
     fi
-fi
-
-# Pull the latest changes from the repository
-git pull || {
-    echo "Error: Could not pull latest changes"
-    exit 1
 }
 
-# Apply the stashed changes
-if git stash list | grep -q 'stash@{0}'; then
-    git stash apply stash@{0} || {
-        echo "Error: Could not apply stashed changes"
+# Run custom setup and player scripts
+run_oa_scripts() {
+    "$PLAYER_UTIL_SCRIPTS_DIR/oasetup" || {
+        log_error "$OASYNC_LOG_FILE" "Could not run oasetup"
         exit 1
     }
-else
-    echo "No stashes to apply"
-fi
+    "$PLAYER_UTIL_SCRIPTS_DIR/oaplayer" || {
+        log_error "$OASYNC_LOG_FILE" "Could not run oaplayer"
+        exit 1
+    }
+}
 
-# Run oasetup and oaplayer
-"$PLAYER_UTIL_SCRIPTS_DIR/oasetup" || {
-    echo "Error: Could not run oasetup"
-    exit 1
+# Main script execution
+main() {
+    check_env_vars
+
+    # Ensure log directory is set correctly after sourcing the config
+    OASYNC_LOG_DIR="$PLAYER_LOGS_DIR/oasync"
+    TODAY=$(date +"%Y-%m-%d")
+    OASYNC_LOG_FILE="$OASYNC_LOG_DIR/$TODAY.log"
+
+    # Ensure the log directory exists
+    mkdir -p "$OASYNC_LOG_DIR" || {
+        echo "Error: Could not create log directory $OASYNC_LOG_DIR"
+        exit 1
+    }
+
+    move_project_directory
+    manage_stashes
+    pull_latest_changes
+    apply_stashed_changes
+    run_oa_scripts
 }
-"$PLAYER_UTIL_SCRIPTS_DIR/oaplayer" || {
-    echo "Error: Could not run oaplayer"
-    exit 1
-}
+
+main

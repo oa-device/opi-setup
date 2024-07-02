@@ -1,7 +1,9 @@
 #!/bin/bash
 
-# Source the config file using an absolute path
-source "$(dirname "$(readlink -f "$0")")/../path-config.sh"
+source "$(dirname "$(readlink -f "$0")")/../helpers.sh" || {
+    echo "Error: Could not source helpers.sh"
+    exit 1
+}
 
 # Rename the array to RELEASES
 RELEASES=("prod" "preprod" "staging")

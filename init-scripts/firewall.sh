@@ -1,6 +1,9 @@
 #!/bin/bash
 
-source "$(dirname "${BASH_SOURCE[0]}")/../path-config.sh"
+source "$(dirname "$(readlink -f "$0")")/../helpers.sh" || {
+    echo "Error: Could not source helpers.sh"
+    exit 1
+}
 
 echo "---------- SETTING UP FIREWALL ----------"
 

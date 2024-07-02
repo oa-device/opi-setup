@@ -1,7 +1,9 @@
 #!/bin/bash
 
-# Source the path configuration file
-source "$(dirname "$(readlink -f "$0")")/path-config.sh"
+source "$(dirname "$(readlink -f "$0")")/helpers.sh" || {
+    echo "Error: Could not source helpers.sh"
+    exit 1
+}
 
 print_section "CONFIGURE SUDO RIGHTS FOR ORANGEPI USER"
 BINARIES=(

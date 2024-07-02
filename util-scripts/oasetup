@@ -1,7 +1,9 @@
 #!/bin/bash
 
-# Source the config file using an absolute path
-source "$(dirname "$(readlink -f "$0")")/../path-config.sh"
+source "$(dirname "$(readlink -f "$0")")/../helpers.sh" || {
+	echo "Error: Could not source helpers.sh"
+	exit 1
+}
 
 # Grant passwordless sudo for all commands temporarily
 echo "orangepi ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/temp_orangepi >/dev/null

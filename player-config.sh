@@ -1,7 +1,9 @@
 #!/bin/bash
 
-# Source the config file
-source "$(dirname "$(readlink -f "$0")")/path-config.sh"
+source "$(dirname "$(readlink -f "$0")")/helpers.sh" || {
+    echo "Error: Could not source helpers.sh"
+    exit 1
+}
 
 # Functions
 get_current_release() {

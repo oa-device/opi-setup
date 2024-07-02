@@ -1,20 +1,14 @@
 #!/bin/bash
 
-# Source the config file using an absolute path
-source "$(dirname "$(readlink -f "$0")")/../path-config.sh"
-
-# Function to print a header
-print_header() {
-    local service_name="$1"
-    echo "-------------------------------------------------"
-    echo "Service: $service_name"
-    echo "-------------------------------------------------"
+source "$(dirname "$(readlink -f "$0")")/../helpers.sh" || {
+    echo "Error: Could not source helpers.sh"
+    exit 1
 }
 
 # Function to check and print the status of a service
 check_service_status() {
     local service_name="$1"
-    print_header "$service_name"
+    print_service_header "$service_name"
     systemctl status "$service_name" --no-pager
     echo # Add a newline for better readability
 }
