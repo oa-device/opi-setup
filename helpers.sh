@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Define the hostname of the machine
+HOSTNAME=$(hostname)
+
 # Define the root directory for the Orangead projects
 ORANGEAD_ROOT_DIR="$HOME/Orangead"
 

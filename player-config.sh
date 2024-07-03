@@ -5,14 +5,13 @@ source "$(dirname "$(readlink -f "$0")")/helpers.sh" || {
     exit 1
 }
 
-# Functions
 get_current_release() {
     local SERVICE_FILE="/etc/systemd/system/slideshow-player.service"
     if [[ -f "$SERVICE_FILE" ]]; then
-        local CURRENT_RELEASE_PATH=$(grep -oP '(?<=ExecStart=).*(?=/dist/linux/slideshow-player)' "$SERVICE_FILE")
+        local CURRENT_RELEASE_PATH
+        CURRENT_RELEASE_PATH=$(grep -oP '(?<=ExecStart=).*(?=/dist/linux/slideshow-player)' "$SERVICE_FILE")
         if [[ -n "$CURRENT_RELEASE_PATH" ]]; then
-            local CURRENT_RELEASE=$(basename "$CURRENT_RELEASE_PATH")
-            echo "$CURRENT_RELEASE"
+            echo "$(basename "$CURRENT_RELEASE_PATH")"
         fi
     fi
 }
@@ -23,6 +22,7 @@ set_choice_based_on_current_release() {
     "prod") echo 1 ;;
     "preprod") echo 2 ;;
     "staging") echo 3 ;;
+    *) echo "" ;;
     esac
 }
 
@@ -52,25 +52,16 @@ prompt_for_directory_choice() {
             fi
         fi
         WORKING_DIR="$PLAYER_ROOT_DIR/$CURRENT_RELEASE"
-        return
     else
         while true; do
             read -p "Enter your choice (1-3): " choice
             case $choice in
-            1)
-                WORKING_DIR="$PLAYER_ROOT_DIR/prod"
-                break
-                ;;
-            2)
-                WORKING_DIR="$PLAYER_ROOT_DIR/preprod"
-                break
-                ;;
-            3)
-                WORKING_DIR="$PLAYER_ROOT_DIR/staging"
-                break
-                ;;
-            *) echo "Invalid choice. Please enter a valid choice (1-3):" ;;
+            1) WORKING_DIR="$PLAYER_ROOT_DIR/prod" ;;
+            2) WORKING_DIR="$PLAYER_ROOT_DIR/preprod" ;;
+            3) WORKING_DIR="$PLAYER_ROOT_DIR/staging" ;;
+            *) echo "Invalid choice. Please enter a valid choice (1-3):" && continue ;;
             esac
+            break
         done
     fi
 }
@@ -78,7 +69,7 @@ prompt_for_directory_choice() {
 extract_release_file() {
     local RELEASE_FILE="$PLAYER_RELEASES_DIR/$ENV_NAME.tar.gz"
     if [[ -f "$RELEASE_FILE" ]]; then
-        mkdir "$WORKING_DIR"
+        mkdir -p "$WORKING_DIR"
         tar -xzf "$RELEASE_FILE" -C "$WORKING_DIR"
         echo "Extracted $ENV_NAME.tar.gz to $WORKING_DIR."
     else
@@ -105,6 +96,7 @@ update_slideshow_script() {
 
 generate_imei_file() {
     local CURRENT_IMEI="$HOSTNAME"
+    local NEW_IMEI
 
     echo -e "\n\e[1;33m=================================================="
     echo -e "IMPORTANT: IMEI CONFIGURATION"
@@ -117,10 +109,7 @@ generate_imei_file() {
         NEW_IMEI="$CURRENT_IMEI"
     else
         read -t 10 -p "Enter a new IMEI: " NEW_IMEI
-        if [[ -z "$NEW_IMEI" ]]; then
-            echo -e "\e[1;31mNo input received within 10 seconds, using the current IMEI\e[0m."
-            NEW_IMEI="$CURRENT_IMEI"
-        fi
+        [[ -z "$NEW_IMEI" ]] && NEW_IMEI="$CURRENT_IMEI"
     fi
 
     echo "$NEW_IMEI" >"$IMEI_FILE"
@@ -129,7 +118,7 @@ generate_imei_file() {
 }
 
 grant_chromium_camera_access() {
-    POLICY_FILE="/etc/chromium-browser/policies/managed/oa_camera_policy.json"
+    local POLICY_FILE="/etc/chromium-browser/policies/managed/oa_camera_policy.json"
 
     # Ensure the policy directory exists
     sudo mkdir -p /etc/chromium-browser/policies/managed
@@ -145,7 +134,6 @@ EOL"
 }
 
 # Main Execution
-HOSTNAME=$(hostname)
 mkdir -p "$PLAYER_LOGS_DIR"
 
 prompt_for_directory_choice
