@@ -14,8 +14,10 @@ configure_sudo_rights() {
         "/usr/bin/tee" "/usr/bin/timedatectl" "/usr/sbin/chpasswd"
         "/usr/sbin/reboot" "/usr/sbin/resize2fs" "/usr/sbin/ufw"
     )
-    local sudo_rights="orangepi ALL=(ALL) NOPASSWD: ${binaries[*]}"
-
+    local sudo_rights="orangepi ALL=(ALL) NOPASSWD: ${binaries[0]}"
+    for binary in "${binaries[@]:1}"; do
+        sudo_rights+=", $binary"
+    done
     if [ -z "$(cat /etc/sudoers.d/orangepi 2>/dev/null)" ]; then
         echo "Sudo rights not yet configured for orangepi user. Configuring..."
         echo "$sudo_rights" | sudo tee /etc/sudoers.d/orangepi >/dev/null
