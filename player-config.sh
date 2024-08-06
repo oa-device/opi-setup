@@ -97,6 +97,21 @@ update_slideshow_script() {
 generate_imei_file() {
     local CURRENT_IMEI="$HOSTNAME"
     local NEW_IMEI
+    local IMEI_DIR="$WORKING_DIR/dist/Documents"
+
+    # Ensure the Documents directory exists
+    if [[ ! -d "$IMEI_DIR" ]]; then
+        mkdir -p "$IMEI_DIR"
+        echo "Created directory: $IMEI_DIR"
+    fi
+
+    # Check if the IMEI file exists
+    if [[ ! -f "$IMEI_FILE" ]]; then
+        touch "$IMEI_FILE"
+        echo "Created IMEI file: $IMEI_FILE"
+    else
+        CURRENT_IMEI=$(cat "$IMEI_FILE")
+    fi
 
     echo -e "\n\e[1;33m=================================================="
     echo -e "IMPORTANT: IMEI CONFIGURATION"
