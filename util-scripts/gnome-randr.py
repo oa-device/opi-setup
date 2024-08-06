@@ -1,6 +1,6 @@
 #!/bin/env python3
 
-import sys, os, dbus
+import sys, os, dbus  # type: ignore
 from collections import defaultdict
 
 # from stackoverflow.com/questions/5369723
@@ -464,10 +464,7 @@ class ConfigInfo:
             self.supports_mirroring = False
         else:
             self.supports_mirroring = True
-        if (
-            "supports-changing-layout-mode" in props
-            and props["supports-changing-layout-mode"] == True
-        ):
+        if "supports-changing-layout-mode" in props and props["supports-changing-layout-mode"] == True:
             self.supports_changing_layout_mode = True
         else:
             self.supports_changing_layout_mode = False
@@ -572,9 +569,7 @@ class ConfigInfo:
         if rel_conf and rel_conf["res"] != "off":
             monmap_move_output(self.monmap, output, rel_out, relation[0])
         else:
-            warn(
-                "{} can't be relative to disabled or unavailable output {}".format(output, rel_out)
-            )
+            warn("{} can't be relative to disabled or unavailable output {}".format(output, rel_out))
 
     def output_set_trans(self, output, trans):
         conf = self.output_config[output]
@@ -662,13 +657,7 @@ class ConfigInfo:
                     olm = lm
                     break
             # compare scale, trans, primary and number of physical monitors
-            if (
-                not olm
-                or olm[2] != nlm[2]
-                or olm[3] != nlm[3]
-                or olm[4] != nlm[4]
-                or len(olm[5]) != len(nlm[5])
-            ):
+            if not olm or olm[2] != nlm[2] or olm[3] != nlm[3] or olm[4] != nlm[4] or len(olm[5]) != len(nlm[5]):
                 return True
             # for all physical monitors
             for nm in nlm[5]:
@@ -706,9 +695,7 @@ class ConfigInfo:
             print(
                 "logical monitor {}:\n"
                 "x: {} y: {}, scale: {}, rotation: {}, primary: {}\n"
-                "associated physical monitors:".format(
-                    n, lm[0], lm[1], lm[2], trans_to_rot(lm[3]), bool_to_str(lm[4])
-                )
+                "associated physical monitors:".format(n, lm[0], lm[1], lm[2], trans_to_rot(lm[3]), bool_to_str(lm[4]))
             )
             for m in lm[5]:
                 print("\t{} {}".format(m[0], m[2]))
@@ -723,11 +710,7 @@ def print_new_config(logical_monitors):
     for n in range(len(logical_monitors)):
         lm = logical_monitors[n]
         print("logical monitor {}:".format(n))
-        print(
-            "x: {} y: {}, scale: {}, rotation: {}, primary: {}".format(
-                lm[0], lm[1], lm[2], trans_to_rot(lm[3]), bool_to_str(lm[4])
-            )
-        )
+        print("x: {} y: {}, scale: {}, rotation: {}, primary: {}".format(lm[0], lm[1], lm[2], trans_to_rot(lm[3]), bool_to_str(lm[4])))
         print("associated physical monitors:")
         for m in lm[5]:
             print("\t{} {}".format(m[0], m[1]))

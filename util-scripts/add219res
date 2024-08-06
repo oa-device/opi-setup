@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# Function to display script usage
+usage() {
+  echo "Usage: $0 [--revert]"
+  echo "  --revert    Remove the custom resolution configuration"
+}
+
+# Function to backup the original file
+backup_file() {
+  if [ ! -f /boot/orangepiEnv.txt.bak ]; then
+    sudo cp /boot/orangepiEnv.txt /boot/orangepiEnv.txt.bak
+    echo "Backup created: /boot/orangepiEnv.txt.bak"
+  fi
+}
+
+# Function to add custom resolution
+add_custom_resolution() {
+  if grep -q "extraargs=.*video=HDMI-A-1:1344x576@60" /boot/orangepiEnv.txt; then
+    echo "Custom resolution is already configured."
+    return 0
+  fi
+
+  if grep -q "^extraargs=" /boot/orangepiEnv.txt; then
+    sudo sed -i 's/^extraargs=\(.*\)/extraargs=\1 video=HDMI-A-1:1344x576@60/' /boot/orangepiEnv.txt
+  else
+    echo "extraargs=video=HDMI-A-1:1344x576@60" | sudo tee -a /boot/orangepiEnv.txt >/dev/null
+  fi
+
+  echo "Custom resolution added successfully."
+}
+
+# Function to remove custom resolution
+remove_custom_resolution() {
+  if grep -q "video=HDMI-A-1:1344x576@60" /boot/orangepiEnv.txt; then
+    sudo sed -i 's/ video=HDMI-A-1:1344x576@60//' /boot/orangepiEnv.txt
+    sudo sed -i '/^extraargs=$/d' /boot/orangepiEnv.txt
+    echo "Custom resolution configuration removed."
+  else
+    echo "Custom resolution is not configured."
+  fi
+}
+
+# Main script logic
+if [ "$1" = "--revert" ]; then
+  backup_file
+  remove_custom_resolution
+elif [ $# -eq 0 ]; then
+  backup_file
+  add_custom_resolution
+else
+  usage
+  exit 1
+fi
+
+echo "Configuration updated. Please reboot for changes to take effect."
