@@ -49,15 +49,29 @@ check_lightdm_service() {
 check_display() {
     log_message "Checking display setup..."
     output=$(/usr/bin/python3 "$PLAYER_UTIL_SCRIPTS_DIR/gnome-randr.py" | cat -A)
+
+    # Extract the actual refresh rate from the output
+    actual_rate=$(echo "$output" | grep -oP "$PREFERRED_RESOLUTION\s+\K[0-9.]+(?=\*)")
+
+    # Function to compare refresh rates with tolerance
+    compare_rates() {
+        local rate1=$(printf "%.2f" $1)
+        local rate2=$(printf "%.2f" $2)
+        local diff=$(awk "BEGIN {print sqrt(($rate1-$rate2)^2)}")
+        awk "BEGIN {exit !($diff <= 0.1)}" # True if difference is 0.1 or less
+    }
+
     if [[ $output == *"logical monitor 0"* ]] &&
-        [[ $output =~ "$PREFERRED_RESOLUTION".*"$PREFERRED_RATE.00*".*"$" ]] &&
+        [[ $output =~ "$PREFERRED_RESOLUTION".*"$actual_rate".*"[*]".*"$" ]] &&
+        compare_rates $PREFERRED_RATE $actual_rate &&
         [[ $output == *"rotation: $ROTATE"* ]] &&
         [[ $output == *"scale: $SCALE"* ]]; then
-        log_message "Display setup check passed."
+        log_message "Display setup check passed. Actual refresh rate: $actual_rate Hz"
         return 0
     else
         log_message "Display setup check failed."
-        log_message "Display setup is: $output" # Log the display setup
+        log_message "Display setup is: $output"
+        log_message "Preferred rate: $PREFERRED_RATE Hz, Actual rate: $actual_rate Hz"
         return 1
     fi
 }
