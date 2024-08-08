@@ -51,7 +51,12 @@ check_display() {
     output=$(/usr/bin/python3 "$PLAYER_UTIL_SCRIPTS_DIR/gnome-randr.py" | cat -A)
 
     # Extract the actual refresh rate from the output
-    actual_rate=$(echo "$output" | grep -oP "$PREFERRED_RESOLUTION\s+\K[0-9.]+(?=\*)")
+    actual_rate=$(echo "$output" | grep -P "$PREFERRED_RESOLUTION.*\*" | grep -oP '\d+\.\d+(?=\*)')
+
+    if [ -z "$actual_rate" ]; then
+        log_message "Error: Could not extract actual refresh rate. Check if the preferred resolution is active."
+        return 1
+    fi
 
     # Function to compare refresh rates with tolerance
     compare_rates() {
@@ -61,11 +66,45 @@ check_display() {
         awk "BEGIN {exit !($diff <= 0.1)}" # True if difference is 0.1 or less
     }
 
-    if [[ $output == *"logical monitor 0"* ]] &&
-        [[ $output =~ "$PREFERRED_RESOLUTION".*"$actual_rate".*"[*]".*"$" ]] &&
-        compare_rates $PREFERRED_RATE $actual_rate &&
-        [[ $output == *"rotation: $ROTATE"* ]] &&
-        [[ $output == *"scale: $SCALE"* ]]; then
+    # Check each condition separately and log the result
+    local resolution_check=false
+    local rate_check=false
+    local rotation_check=false
+    local scale_check=false
+
+    if [[ $output == *"logical monitor 0"* ]]; then
+        if [[ $output =~ $PREFERRED_RESOLUTION[[:space:]]+[0-9.]+\*[[:space:]] ]]; then
+            resolution_check=true
+            log_message "Resolution check passed."
+        else
+            log_message "Resolution check failed. Expected: $PREFERRED_RESOLUTION, Actual: $(echo "$output" | grep -oP "$PREFERRED_RESOLUTION\s+\d+\.\d+\*")"
+        fi
+
+        if compare_rates $PREFERRED_RATE $actual_rate; then
+            rate_check=true
+            log_message "Refresh rate check passed."
+        else
+            log_message "Refresh rate check failed. Preferred: $PREFERRED_RATE Hz, Actual: $actual_rate Hz"
+        fi
+
+        if [[ $output =~ rotation:[[:space:]]+$ROTATE ]]; then
+            rotation_check=true
+            log_message "Rotation check passed."
+        else
+            log_message "Rotation check failed. Expected: $ROTATE, Actual: $(echo "$output" | grep -oP "rotation: \w+")"
+        fi
+
+        if [[ $output =~ scale:[[:space:]]+$SCALE ]]; then
+            scale_check=true
+            log_message "Scale check passed."
+        else
+            log_message "Scale check failed. Expected: $SCALE, Actual: $(echo "$output" | grep -oP "scale: \d+\.\d+")"
+        fi
+    else
+        log_message "No logical monitor found."
+    fi
+
+    if $resolution_check && $rate_check && $rotation_check && $scale_check; then
         log_message "Display setup check passed. Actual refresh rate: $actual_rate Hz"
         return 0
     else
