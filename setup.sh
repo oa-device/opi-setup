@@ -204,6 +204,22 @@ EOF
     sudo sed -i 's/^MOTD_DISABLE=".*"/MOTD_DISABLE="header tips updates"/' /etc/default/orangepi-motd
     sudo sed -i 's/^PRIMARY_DIRECTION=".*"/PRIMARY_DIRECTION="off"/' /etc/default/orangepi-motd
 
+    # Modify release upgrade settings
+    sudo sed -i 's/^Prompt=.*/Prompt=never/' /etc/update-manager/release-upgrades
+
+    # Modify ubuntu-advantage-upgrades.cfg
+    local ua_upgrades_cfg="/etc/update-manager/release-upgrades.d/ubuntu-advantage-upgrades.cfg"
+    if [ -f "$ua_upgrades_cfg" ]; then
+        sudo sed -i '/^Pockets=/s/proposed,//' "$ua_upgrades_cfg"
+        sudo sed -i '/^PostInstallScripts=/s/^/#/' "$ua_upgrades_cfg"
+    else
+        echo "Warning: $ua_upgrades_cfg not found. Skipping modifications."
+    fi
+
+    # Disable the upgrade notifier service
+    sudo systemctl disable ubuntu-advantage.service
+    sudo systemctl stop ubuntu-advantage.service
+
     echo "Update-manager settings:"
     gsettings list-recursively com.ubuntu.update-manager | sed 's/^/\t/'
     echo "Update-notifier settings:"
@@ -214,6 +230,16 @@ EOF
     grep -E '^MOTD_DISABLE=|^PRIMARY_DIRECTION=' /etc/default/orangepi-motd | sed 's/^/\t/'
     echo "50unattended-upgrades configuration:"
     grep -vE '^//|^[[:space:]]*$' /etc/apt/apt.conf.d/50unattended-upgrades | sed 's/^/\t/'
+    echo "Release upgrade settings:"
+    grep '^Prompt=' /etc/update-manager/release-upgrades | sed 's/^/\t/'
+    echo "ubuntu-advantage-upgrades.cfg modifications:"
+    if [ -f "$ua_upgrades_cfg" ]; then
+        grep -E '^Pockets=|^#?PostInstallScripts=' "$ua_upgrades_cfg" | sed 's/^/\t/'
+    else
+        echo -e "\tFile not found: $ua_upgrades_cfg"
+    fi
+    echo "Ubuntu Advantage service status:"
+    systemctl is-active --quiet ubuntu-advantage.service && echo -e "\tActive" || echo -e "\tInactive"
 }
 
 disable_gnome_notifications() {
