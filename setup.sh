@@ -101,6 +101,19 @@ disable_update_notifications() {
     gsettings set com.ubuntu.update-manager window-height 1
     gsettings set com.ubuntu.update-manager window-width 1
 
+    # Remove update-manager from the list of applications that can show notifications
+    local current_apps=$(gsettings get org.gnome.desktop.notifications application-children)
+    if [[ $current_apps == "@as []" ]]; then
+        echo "No applications in the notification list."
+    else
+        local new_apps=$(echo "$current_apps" | sed "s/'update-manager',*//g" | sed "s/,\s*,/,/g" | sed "s/^,\s*//g" | sed "s/,\s*$//g" | sed "s/^\[//g" | sed "s/\]$//g")
+        if [[ -z "$new_apps" ]]; then
+            gsettings set org.gnome.desktop.notifications application-children "[]"
+        else
+            gsettings set org.gnome.desktop.notifications application-children "[$new_apps]"
+        fi
+    fi
+
     sudo sed -i 's/^APT::Periodic::Update-Package-Lists "1";/APT::Periodic::Update-Package-Lists "0";/' /etc/apt/apt.conf.d/20auto-upgrades
     sudo sed -i 's/^APT::Periodic::Unattended-Upgrade "1";/APT::Periodic::Unattended-Upgrade "0";/' /etc/apt/apt.conf.d/20auto-upgrades
     sudo sed -i 's/^APT::Periodic::Update-Package-Lists "1";/APT::Periodic::Update-Package-Lists "0";/' /etc/apt/apt.conf.d/10periodic
@@ -115,9 +128,65 @@ disable_update_notifications() {
 
     sudo sed -i 's/^DPkg::Post-Invoke {/#&/' /etc/apt/apt.conf.d/99update-notifier
     sudo sed -i 's/^APT::Update::Post-Invoke-Success {/#&/' /etc/apt/apt.conf.d/99update-notifier
-    sudo sed -i 's/^Unattended-Upgrade::Allowed-Origins.*/Unattended-Upgrade::Allowed-Origins { };/' /etc/apt/apt.conf.d/50unattended-upgrades
-    sudo sed -i 's/^Unattended-Upgrade::DevRelease.*/Unattended-Upgrade::DevRelease "false";/' /etc/apt/apt.conf.d/50unattended-upgrades
-    sudo sed -i 's/^\(Unattended-Upgrade::Package-Blacklist.*\)/# \1/' /etc/apt/apt.conf.d/50unattended-upgrades
+
+    # Replace the entire content of 50unattended-upgrades
+    cat <<EOF | sudo tee /etc/apt/apt.conf.d/50unattended-upgrades >/dev/null
+// Automatically upgrade packages from these (origin:archive) pairs
+Unattended-Upgrade::Allowed-Origins {
+    // "${distro_id}:${distro_codename}";
+    // "${distro_id}:${distro_codename}-security";
+    // "${distro_id}ESMApps:${distro_codename}-apps-security";
+    // "${distro_id}ESM:${distro_codename}-infra-security";
+};
+
+// List of packages to not update (regexp are supported)
+Unattended-Upgrade::Package-Blacklist {
+    // "vim";
+    // "libc6";
+    // "libc6-dev";
+    // "libc6-i686";
+};
+
+// This option controls whether the development release of Ubuntu will be
+// upgraded automatically. Valid values are "true", "false", and "auto".
+Unattended-Upgrade::DevRelease "false";
+
+// Do automatic removal of unused packages after the upgrade
+// (equivalent to apt-get autoremove)
+Unattended-Upgrade::Remove-Unused-Kernel-Packages "false";
+Unattended-Upgrade::Remove-New-Unused-Dependencies "false";
+Unattended-Upgrade::Remove-Unused-Dependencies "false";
+
+// Automatically reboot *WITHOUT CONFIRMATION* if
+// the file /var/run/reboot-required is found after the upgrade
+Unattended-Upgrade::Automatic-Reboot "false";
+
+// Automatically reboot even if there are users currently logged in
+// when Unattended-Upgrade::Automatic-Reboot is set to true
+Unattended-Upgrade::Automatic-Reboot-WithUsers "false";
+
+// If automatic reboot is enabled and needed, reboot at the specific
+// time instead of immediately
+//Unattended-Upgrade::Automatic-Reboot-Time "02:00";
+
+// Use apt bandwidth limit feature, this example limits the download
+// speed to 70kb/sec
+//Acquire::http::Dl-Limit "70";
+
+// Enable logging to syslog. Default is False
+Unattended-Upgrade::SyslogEnable "false";
+
+// Specify syslog facility. Default is daemon
+// Unattended-Upgrade::SyslogFacility "daemon";
+
+// Download and install upgrades only on AC power
+// (i.e. skip or gracefully stop updates on battery)
+Unattended-Upgrade::OnlyOnACPower "false";
+
+// Download and install upgrades only on non-metered connection
+// (i.e. skip or gracefully stop updates on a metered connection)
+Unattended-Upgrade::Skip-Updates-On-Metered-Connections "true";
+EOF
 
     sudo systemctl disable update-notifier-download.timer
     sudo systemctl stop update-notifier-download.timer
@@ -128,12 +197,99 @@ disable_update_notifications() {
     sudo systemctl disable apt-daily-upgrade.timer
     sudo systemctl stop apt-daily-upgrade.timer
 
+    # Disable Ubuntu Pro messages
+    sudo pro config set apt_news=false
+
+    # Configure OrangePi MOTD
+    sudo sed -i 's/^MOTD_DISABLE=".*"/MOTD_DISABLE="header tips updates"/' /etc/default/orangepi-motd
+    sudo sed -i 's/^PRIMARY_DIRECTION=".*"/PRIMARY_DIRECTION="off"/' /etc/default/orangepi-motd
+
+    # Modify release upgrade settings
+    sudo sed -i 's/^Prompt=.*/Prompt=never/' /etc/update-manager/release-upgrades
+
+    # Modify ubuntu-advantage-upgrades.cfg
+    local ua_upgrades_cfg="/etc/update-manager/release-upgrades.d/ubuntu-advantage-upgrades.cfg"
+    if [ -f "$ua_upgrades_cfg" ]; then
+        sudo sed -i '/^Pockets=/s/proposed,//' "$ua_upgrades_cfg"
+        sudo sed -i '/^PostInstallScripts=/s/^/#/' "$ua_upgrades_cfg"
+    else
+        echo "Warning: $ua_upgrades_cfg not found. Skipping modifications."
+    fi
+
+    # Disable the upgrade notifier service
+    sudo systemctl disable ubuntu-advantage.service
+    sudo systemctl stop ubuntu-advantage.service
+
     echo "Update-manager settings:"
     gsettings list-recursively com.ubuntu.update-manager | sed 's/^/\t/'
     echo "Update-notifier settings:"
     gsettings list-recursively com.ubuntu.update-notifier | sed 's/^/\t/'
     echo "Current timer states:"
     systemctl list-timers --all --no-pager
+    echo "OrangePi MOTD configuration:"
+    grep -E '^MOTD_DISABLE=|^PRIMARY_DIRECTION=' /etc/default/orangepi-motd | sed 's/^/\t/'
+    echo "50unattended-upgrades configuration:"
+    grep -vE '^//|^[[:space:]]*$' /etc/apt/apt.conf.d/50unattended-upgrades | sed 's/^/\t/'
+    echo "Release upgrade settings:"
+    grep '^Prompt=' /etc/update-manager/release-upgrades | sed 's/^/\t/'
+    echo "ubuntu-advantage-upgrades.cfg modifications:"
+    if [ -f "$ua_upgrades_cfg" ]; then
+        grep -E '^Pockets=|^#?PostInstallScripts=' "$ua_upgrades_cfg" | sed 's/^/\t/'
+    else
+        echo -e "\tFile not found: $ua_upgrades_cfg"
+    fi
+    echo "Ubuntu Advantage service status:"
+    systemctl is-active --quiet ubuntu-advantage.service && echo -e "\tActive" || echo -e "\tInactive"
+}
+
+disable_gnome_notifications() {
+    print_section "DISABLING GNOME NOTIFICATIONS"
+    gsettings set org.gnome.desktop.notifications show-banners false
+    gsettings set org.gnome.desktop.notifications show-in-lock-screen false
+
+    # Disable specific application notifications
+    local apps_to_disable=(
+        'update-manager'
+        'balena-etcher-electron'
+        'org-gnome-nautilus'
+        'gnome-network-panel'
+        'org.gnome.Evolution-alarm-notify'
+        'org.gnome.Calendar'
+        'org.gnome.Software'
+    )
+
+    for app in "${apps_to_disable[@]}"; do
+        gsettings set org.gnome.desktop.notifications.application:/org/gnome/desktop/notifications/application/$app/ enable false
+    done
+
+    # Update the application-children list
+    local current_apps=$(gsettings get org.gnome.desktop.notifications application-children)
+    if [[ $current_apps == "@as []" ]]; then
+        echo "No applications in the notification list."
+    else
+        local new_apps=""
+        for app in ${current_apps//,/ }; do
+            if [[ ! " ${apps_to_disable[@]} " =~ " ${app//\'/} " ]]; then
+                new_apps+="$app,"
+            fi
+        done
+        new_apps=${new_apps%,} # Remove trailing comma
+        if [[ -z "$new_apps" ]]; then
+            gsettings set org.gnome.desktop.notifications application-children "[]"
+        else
+            gsettings set org.gnome.desktop.notifications application-children "[$new_apps]"
+        fi
+    fi
+
+    # Disable network manager notifications
+    gsettings set org.gnome.nm-applet disable-connected-notifications true
+    gsettings set org.gnome.nm-applet disable-disconnected-notifications true
+    gsettings set org.gnome.nm-applet disable-vpn-notifications true
+
+    echo "GNOME notification settings:"
+    gsettings list-recursively org.gnome.desktop.notifications | sed 's/^/\t/'
+    echo "Network Manager notification settings:"
+    gsettings list-recursively org.gnome.nm-applet | sed 's/^/\t/'
 }
 
 configure_gnome_settings() {
@@ -151,6 +307,22 @@ configure_gnome_settings() {
     gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 0
     gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 0
     echo "Power settings:"
+    gsettings list-recursively org.gnome.settings-daemon.plugins.power | sed 's/^/\t/'
+
+    # Disable screen lock
+    gsettings set org.gnome.desktop.screensaver lock-enabled false
+    gsettings set org.gnome.desktop.lockdown disable-lock-screen true
+
+    # Disable automatic suspend
+    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
+    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing'
+
+    # Disable screen dimming
+    gsettings set org.gnome.settings-daemon.plugins.power idle-brightness 100
+
+    echo "Screen lock and power management settings:"
+    gsettings list-recursively org.gnome.desktop.screensaver | sed 's/^/\t/'
+    gsettings list-recursively org.gnome.desktop.lockdown | sed 's/^/\t/'
     gsettings list-recursively org.gnome.settings-daemon.plugins.power | sed 's/^/\t/'
 }
 
@@ -228,6 +400,7 @@ configure_wifi
 schedule_auto_update_and_reboot
 setup_systemd_services
 disable_update_notifications
+disable_gnome_notifications
 configure_gnome_settings
 cleanup_keyring_files
 update_keyring_for_vnc
