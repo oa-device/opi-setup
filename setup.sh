@@ -9,7 +9,7 @@ configure_sudo_rights() {
     print_section "CONFIGURE SUDO RIGHTS FOR ORANGEPI USER"
     local binaries=(
         "/usr/bin/apt" "/usr/bin/apt-get" "/usr/bin/bash" "/usr/bin/curl"
-        "/usr/bin/cp" "/usr/bin/growpart" "/usr/bin/mkdir" "/usr/bin/mv"
+        "/usr/bin/cp" "/usr/bin/dpkg" "/usr/bin/growpart" "/usr/bin/mkdir" "/usr/bin/mv"
         "/usr/bin/nano" "/usr/bin/rm" "/usr/bin/sed" "/usr/bin/systemctl"
         "/usr/bin/tee" "/usr/bin/timedatectl" "/usr/sbin/chpasswd"
         "/usr/sbin/reboot" "/usr/sbin/resize2fs" "/usr/sbin/ufw"
