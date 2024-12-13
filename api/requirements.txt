@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+psutil
+pydantic
+pydantic-settings
+pillow

@@ -1,0 +1,25 @@
+[Unit]
+Description=OrangePi Health Check API
+After=network.target
+
+[Service]
+Type=simple
+User=orangepi
+Group=orangepi
+WorkingDirectory=%PLAYER_ROOT_DIR%/api
+Environment="PATH=/usr/bin:/usr/sbin:/usr/local/bin:%PLAYER_ROOT_DIR%/api/.venv/bin:$PATH"
+Environment="PYTHONUNBUFFERED=1"
+Environment="DISPLAY=:0.0"
+Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
+Environment="XAUTHORITY=/run/user/1000/gdm/Xauthority"
+
+StandardOutput=file:%PLAYER_LOGS_DIR%/health_check_api.log
+StandardError=file:%PLAYER_LOGS_DIR%/health_check_api.log
+
+ExecStart=%PLAYER_ROOT_DIR%/api/.venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 9090
+
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target 
