@@ -40,7 +40,9 @@ if [ -n "$USERNAME" ] && [ -n "$IP" ]; then
         --exclude='staging/' \
         --exclude='logs/*' \
         --exclude='api/.venv/' \
-        --exclude='api/__pycache__/' \
+        --exclude='**/__pycache__/' \
+        --exclude='**/*.pyc' \
+        --exclude='**/*.pyo' \
         --include='logs/.placeholder' \
         "$DIR/" "$DEST"
 else
