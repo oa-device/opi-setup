@@ -352,6 +352,26 @@ async def take_screenshot() -> Optional[Path]:
         print(f"Screenshot error: {str(e)}")
         return None
 
+def get_device_info() -> Dict[str, str]:
+    """Get device type and series based on hostname."""
+    hostname = platform.node().lower()
+    
+    # Extract series and number from hostname (e.g., 'arq0001', 'labatt0002')
+    series_match = re.match(r'^([a-z]+)(\d+)$', hostname)
+    if series_match:
+        series = series_match.group(1).upper()
+        return {
+            "type": "OrangePi",
+            "series": series,
+            "hostname": hostname
+        }
+    
+    return {
+        "type": "OrangePi",
+        "series": "UNKNOWN",
+        "hostname": hostname
+    }
+
 @app.get("/health")
 async def health_check():
     """Get system health status and metrics."""
@@ -359,6 +379,7 @@ async def health_check():
         metrics = get_system_metrics()
         deployment = get_deployment_info()
         player = check_player_status()
+        device = get_device_info()
         
         # Get current time in UTC
         now = datetime.now(timezone.utc)
@@ -370,6 +391,7 @@ async def health_check():
         
         return JSONResponse({
             "status": status,
+            "hostname": device["hostname"],
             "timestamp": now.isoformat(),
             "timestamp_epoch": int(now.timestamp()),
             "version": {
@@ -379,8 +401,8 @@ async def health_check():
                     "platform": platform.system(),
                     "release": platform.release(),
                     "os": f"{platform.system()} {platform.release()}",
-                    "type": "OrangePi",
-                    "series": "UNKNOWN"
+                    "type": device["type"],
+                    "series": device["series"]
                 }
             },
             "metrics": metrics,
