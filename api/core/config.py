@@ -34,5 +34,5 @@ HEALTH_SCORE_THRESHOLDS = {
 }
 
 # Screenshot settings
-SCREENSHOT_MAX_HISTORY = 10
-SCREENSHOT_RATE_LIMIT = 5  # seconds 
+SCREENSHOT_MAX_HISTORY = 50  # Maximum number of screenshot files to keep
+SCREENSHOT_RATE_LIMIT = 5  # seconds
