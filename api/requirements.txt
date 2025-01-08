@@ -4,3 +4,4 @@ psutil
 pydantic
 pydantic-settings
 pillow
+websocket-client
