@@ -80,7 +80,14 @@ def get_deployment_info() -> Dict:
         display = get_display_info()
         
         # Get last reboot time
-        last_reboot = run_command(["who", "-b"]).split()[-1]
+        last_reboot_str = run_command(["who", "-b"]).split()[-1]
+        try:
+            # Convert last_reboot to datetime and format consistently
+            last_reboot_dt = datetime.strptime(last_reboot_str, "%Y-%m-%d %H:%M")
+            last_reboot_utc = last_reboot_dt.replace(tzinfo=timezone.utc)
+            last_reboot = last_reboot_utc.isoformat()
+        except Exception:
+            last_reboot = datetime.now(timezone.utc).isoformat()
         
         # Check last successful oasync
         last_sync = None
