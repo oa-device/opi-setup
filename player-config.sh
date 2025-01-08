@@ -156,7 +156,7 @@ prompt_for_directory_choice
 ENV_NAME=$(basename "$WORKING_DIR")
 SLIDESHOW_SCRIPT="$WORKING_DIR/dist/linux/slideshow-player"
 IMEI_FILE="$WORKING_DIR/dist/Documents/imei.txt"
-CHROMIUM_ARGUMENTS=" --incognito --enable-logging --v=1 --autoplay-policy=no-user-gesture-required --no-first-run --hide-crash-restore-bubble --aggressive-cache-discard --disable-application-cache --media-cache-size=1 --disk-cache-size=1"
+CHROMIUM_ARGUMENTS=" --incognito --enable-logging --v=1 --autoplay-policy=no-user-gesture-required --no-first-run --hide-crash-restore-bubble --aggressive-cache-discard --disable-application-cache --media-cache-size=1 --disk-cache-size=1 --remote-debugging-port=9222"
 
 # Processes name purposely truncated to 15 characters to match systemd service name
 pkill slideshow-playe
