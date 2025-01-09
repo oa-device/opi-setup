@@ -14,18 +14,22 @@ from ..models.schemas import HealthResponse, ErrorResponse
 
 router = APIRouter()
 
+
 # Cache expensive operations
 @cache_with_ttl(CACHE_TTL)
 def get_cached_metrics() -> Dict:
     return get_system_metrics()
 
+
 @cache_with_ttl(CACHE_TTL)
 def get_cached_display_info() -> Dict:
     return get_display_info()
 
+
 @cache_with_ttl(CACHE_TTL)
 def get_cached_deployment_info() -> Dict:
     return get_deployment_info()
+
 
 @router.get("/health", response_model=HealthResponse)
 async def health_check():
@@ -37,18 +41,18 @@ async def health_check():
         display_info = get_cached_display_info()
         player = check_player_status()  # Don't cache this as it needs to be real-time
         device = get_device_info()
-        
+
         # Get current time in UTC
         now = datetime.now(timezone.utc)
-        
+
         # Calculate health scores
         health_scores = calculate_health_score(metrics, player, display_info)
-        
+
         # Determine overall status
         status = "online"
         if not player["healthy"]:
             status = "maintenance" if player["service_status"] == "active" else "offline"
-        
+
         return {
             "status": status,
             "hostname": device["hostname"],
@@ -57,13 +61,14 @@ async def health_check():
             "version": {
                 "api": APP_VERSION,
                 "python": platform.python_version(),
+                "tailscale": get_version_info().get("tailscale_version"),
                 "system": {
                     "platform": platform.system(),
                     "release": platform.release(),
                     "os": f"{platform.system()} {platform.release()}",
                     "type": device["type"],
-                    "series": device["series"]
-                }
+                    "series": device["series"],
+                },
             },
             "metrics": metrics,
             "deployment": deployment,
@@ -72,20 +77,16 @@ async def health_check():
             "_cache_info": {
                 "metrics": get_cached_metrics.cache_info(),
                 "display": get_cached_display_info.cache_info(),
-                "deployment": get_cached_deployment_info.cache_info()
-            }
+                "deployment": get_cached_deployment_info.cache_info(),
+            },
         }
     except Exception as e:
         now = datetime.now(timezone.utc)
         return JSONResponse(
             status_code=500,
-            content=ErrorResponse(
-                status="error",
-                timestamp=now.isoformat(),
-                timestamp_epoch=int(now.timestamp()),
-                error=str(e)
-            ).dict()
+            content=ErrorResponse(status="error", timestamp=now.isoformat(), timestamp_epoch=int(now.timestamp()), error=str(e)).dict(),
         )
+
 
 @router.get("/health/summary")
 async def health_summary():
@@ -94,7 +95,7 @@ async def health_summary():
         metrics = get_cached_metrics()
         player = check_player_status()
         display_info = get_cached_display_info()
-        
+
         return get_health_summary(metrics, player, display_info)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) 
+        raise HTTPException(status_code=500, detail=str(e))

@@ -2,12 +2,14 @@ from datetime import datetime
 from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
+
 class SystemMetrics(BaseModel):
     cpu: Dict
     memory: Dict
     disk: Dict
     network: Optional[Dict] = None
     boot_time: Optional[float] = None
+
 
 class PlayerStatus(BaseModel):
     service_status: str
@@ -16,15 +18,19 @@ class PlayerStatus(BaseModel):
     healthy: bool
     error: Optional[str] = None
 
+
 class VersionInfo(BaseModel):
     api: str
     python: str
+    tailscale: Optional[str] = None
     system: Dict[str, str]
+
 
 class DeviceInfo(BaseModel):
     type: str
     series: str
     hostname: str
+
 
 class HealthScore(BaseModel):
     cpu: float
@@ -36,12 +42,14 @@ class HealthScore(BaseModel):
     overall: float
     status: Dict[str, bool]
 
+
 class ScreenshotInfo(BaseModel):
     timestamp: str
     filename: str
     path: str
     resolution: Optional[tuple] = None
     size: Optional[int] = None
+
 
 class HealthResponse(BaseModel):
     status: str
@@ -55,8 +63,9 @@ class HealthResponse(BaseModel):
     health_scores: HealthScore
     _cache_info: Optional[Dict] = None
 
+
 class ErrorResponse(BaseModel):
     status: str = "error"
     timestamp: str
     timestamp_epoch: int
-    error: str 
+    error: str
