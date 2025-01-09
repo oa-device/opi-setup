@@ -9,53 +9,43 @@ from ..services.utils import run_command
 from ..services.display import get_display_info
 from ..services.system import get_service_info
 
+
 def check_player_status() -> Dict[str, str]:
     """Check if the player is actually running in Chromium."""
     try:
         # Check if slideshow service is active
-        service_active = run_command(
-            [SYSTEMCTL_CMD, "is-active", "slideshow-player.service"]
-        ) == "active"
-        
+        service_active = run_command([SYSTEMCTL_CMD, "is-active", "slideshow-player.service"]) == "active"
+
         # Check if Chromium is running the player
         chromium_running = False
         if service_active:
             ps_output = run_command([PS_CMD, "aux"])
             chromium_running = "chromium-browser" in ps_output and "slideshow-player" in ps_output
-        
+
         # Get display status
         display_info = get_display_info()
-        
+
         # Get process details if running
         process_info = None
         if chromium_running:
             try:
-                for proc in psutil.process_iter(['pid', 'cpu_percent', 'memory_percent']):
+                for proc in psutil.process_iter(["pid", "cpu_percent", "memory_percent"]):
                     if "chromium-browser" in proc.name():
-                        process_info = {
-                            "pid": proc.pid,
-                            "cpu_usage": proc.cpu_percent(),
-                            "memory_usage": proc.memory_percent()
-                        }
+                        process_info = {"pid": proc.pid, "cpu_usage": proc.cpu_percent(), "memory_usage": proc.memory_percent()}
                         break
             except Exception:
                 pass
-        
+
         return {
             "service_status": "active" if service_active else "inactive",
             "player_status": "running" if chromium_running else "stopped",
             "display_connected": display_info.get("connected", False),
             "healthy": service_active and chromium_running and display_info.get("connected", False),
-            "process": process_info
+            "process": process_info,
         }
     except Exception as e:
-        return {
-            "service_status": "unknown",
-            "player_status": "unknown",
-            "display_connected": False,
-            "healthy": False,
-            "error": str(e)
-        }
+        return {"service_status": "unknown", "player_status": "unknown", "display_connected": False, "healthy": False, "error": str(e)}
+
 
 def get_deployment_info() -> Dict:
     """Get deployment information."""
@@ -63,32 +53,26 @@ def get_deployment_info() -> Dict:
         # Get current release info
         release_info = get_current_release()
         if not release_info:
-            return {
-                "status": "unknown",
-                "error": "Could not determine release path",
-                "last_update": datetime.now(timezone.utc).isoformat()
-            }
-        
+            return {"status": "unknown", "error": "Could not determine release path", "last_update": datetime.now(timezone.utc).isoformat()}
+
         # Get service statuses
         services = {
             "slideshow": get_service_info("slideshow-player.service"),
             "watchdog": get_service_info("watchdog.service"),
-            "hide_cursor": get_service_info("hide-cursor.service")
+            "hide_cursor": get_service_info("hide-cursor.service"),
         }
-        
+
         # Get display information
         display = get_display_info()
-        
-        # Get last reboot time
-        last_reboot_str = run_command(["who", "-b"]).split()[-1]
+
+        # Get last reboot time from psutil
         try:
-            # Convert last_reboot to datetime and format consistently
-            last_reboot_dt = datetime.strptime(last_reboot_str, "%Y-%m-%d %H:%M")
-            last_reboot_utc = last_reboot_dt.replace(tzinfo=timezone.utc)
-            last_reboot = last_reboot_utc.isoformat()
+            boot_timestamp = psutil.boot_time()
+            boot_datetime = datetime.fromtimestamp(boot_timestamp, timezone.utc)
+            last_reboot = boot_datetime.isoformat()
         except Exception:
             last_reboot = datetime.now(timezone.utc).isoformat()
-        
+
         # Check last successful oasync
         last_sync = None
         last_sync_epoch = None
@@ -104,17 +88,17 @@ def get_deployment_info() -> Dict:
                     last_sync_epoch = int(sync_time_utc.timestamp())
         except Exception:
             pass
-        
+
         # Get player version
         version = "unknown"
         version_file = PLAYER_ROOT / release_info / "version.txt"
         if version_file.exists():
             version = version_file.read_text().strip()
-        
+
         # Determine overall status
         service_status = all(svc["status"] == "active" for svc in services.values())
         display_status = display.get("connected", False)
-        
+
         deployment_info = {
             "status": "active" if service_status and display_status else "inactive",
             "version": version,
@@ -124,17 +108,14 @@ def get_deployment_info() -> Dict:
             "last_sync": last_sync,
             "last_sync_epoch": last_sync_epoch,
             "services": services,
-            "display": display
+            "display": display,
         }
-        
+
         # Remove None values
         return {k: v for k, v in deployment_info.items() if v is not None}
     except Exception as e:
-        return {
-            "status": "unknown",
-            "error": str(e),
-            "last_update": datetime.now(timezone.utc).isoformat()
-        }
+        return {"status": "unknown", "error": str(e), "last_update": datetime.now(timezone.utc).isoformat()}
+
 
 def get_current_release() -> str:
     """Get the current release path from the slideshow service."""
@@ -142,15 +123,16 @@ def get_current_release() -> str:
         service_file = "/etc/systemd/system/slideshow-player.service"
         if not os.path.exists(service_file):
             return "unknown"
-            
+
         with open(service_file) as f:
             content = f.read()
-            
+
         # Extract release path
         import re
-        match = re.search(r'(?<=ExecStart=).*?(?=/dist/linux/slideshow-player)', content)
+
+        match = re.search(r"(?<=ExecStart=).*?(?=/dist/linux/slideshow-player)", content)
         if match:
             return os.path.basename(match.group())
     except Exception:
         pass
-    return "unknown" 
+    return "unknown"
