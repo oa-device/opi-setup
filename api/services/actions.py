@@ -1,8 +1,11 @@
 import asyncio
 import logging
-from pathlib import Path
+import os
 
 logger = logging.getLogger(__name__)
+
+# Get the current environment including PATH
+ENV = os.environ.copy()
 
 class ActionsService:
     """Service for handling device actions like reboot and player restart."""
@@ -15,11 +18,12 @@ class ActionsService:
             str: Output from the reboot command
         """
         try:
-            # Use the sreboot script which should be in the PATH
+            # Use sreboot script from system PATH
             process = await asyncio.create_subprocess_exec(
                 "sreboot",
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
+                env=ENV  # Pass the current environment including PATH
             )
             stdout, stderr = await process.communicate()
             
@@ -41,11 +45,12 @@ class ActionsService:
             str: Output from the restart command
         """
         try:
-            # Use systemctl to restart the slideshow-player service
+            # Use oaplayer script from system PATH
             process = await asyncio.create_subprocess_exec(
-                "systemctl", "restart", "slideshow-player.service",
+                "oaplayer",
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
+                env=ENV  # Pass the current environment including PATH
             )
             stdout, stderr = await process.communicate()
             
