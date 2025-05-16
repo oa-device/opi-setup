@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 ENV = os.environ.copy()
 
 # Define paths to utility scripts
-UTIL_SCRIPTS_DIR = PLAYER_ROOT.parent / "util-scripts"
+UTIL_SCRIPTS_DIR = PLAYER_ROOT / "util-scripts"
 
 class ActionsService:
     """Service for handling device actions like reboot and player restart."""
