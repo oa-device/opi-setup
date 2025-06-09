@@ -27,11 +27,19 @@ def check_player_status() -> Dict[str, str]:
 
         # Get process details if running
         process_info = None
+        player_start_time = None
         if chromium_running:
             try:
-                for proc in psutil.process_iter(["pid", "cpu_percent", "memory_percent"]):
+                for proc in psutil.process_iter(["pid", "cpu_percent", "memory_percent", "create_time"]):
                     if "chromium-browser" in proc.name():
-                        process_info = {"pid": proc.pid, "cpu_usage": proc.cpu_percent(), "memory_usage": proc.memory_percent()}
+                        create_time = datetime.fromtimestamp(proc.create_time(), timezone.utc)
+                        player_start_time = create_time.isoformat()
+                        process_info = {
+                            "pid": proc.pid, 
+                            "cpu_usage": proc.cpu_percent(), 
+                            "memory_usage": proc.memory_percent(),
+                            "start_time": player_start_time
+                        }
                         break
             except Exception:
                 pass
@@ -42,6 +50,7 @@ def check_player_status() -> Dict[str, str]:
             "display_connected": display_info.get("connected", False),
             "healthy": service_active and chromium_running and display_info.get("connected", False),
             "process": process_info,
+            "player_start_time": player_start_time,
         }
     except Exception as e:
         return {"service_status": "unknown", "player_status": "unknown", "display_connected": False, "healthy": False, "error": str(e)}
