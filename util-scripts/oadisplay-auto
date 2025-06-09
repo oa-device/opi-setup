@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Automated display setup for API endpoints
+# This script applies the current display configuration without requiring user input
+
+source "$(dirname "$(readlink -f "$0")")/../helpers.sh" || {
+    echo "Error: Could not source helpers.sh"
+    exit 1
+}
+
+echo "---------- AUTOMATED DISPLAY SETUP ----------"
+
+# Define the DISPLAY_CONFIG_FILE using the sourced paths
+DISPLAY_CONFIG_FILE="$PLAYER_CONFIG_DIR/display.conf"
+
+# Check if configuration file exists
+if [ ! -f "$DISPLAY_CONFIG_FILE" ]; then
+    echo "Error: Display configuration file not found at $DISPLAY_CONFIG_FILE"
+    exit 1
+fi
+
+# Read values from config file
+source "$DISPLAY_CONFIG_FILE"
+
+echo "Applying display configuration:"
+echo "  Resolution: ${PREFERRED_RESOLUTION:-3840x2160}"
+echo "  Rate: ${PREFERRED_RATE:-60}Hz"
+echo "  Rotation: ${ROTATE:-left}"
+echo "  Scale: ${SCALE:-2}"
+
+# Run the display setup script with current configuration
+"$PLAYER_UTIL_SCRIPTS_DIR/display.sh"
+
+if [ $? -eq 0 ]; then
+    echo "---------- AUTOMATED DISPLAY SETUP COMPLETE ----------"
+    echo "Display configuration applied successfully"
+else
+    echo "---------- AUTOMATED DISPLAY SETUP FAILED ----------"
+    echo "Failed to apply display configuration"
+    exit 1
+fi
