@@ -74,6 +74,14 @@ async def health_check():
             "deployment": deployment,
             "player": player,
             "health_scores": health_scores,
+            "capabilities": {
+                "supports_screenshots": True,
+                "supports_player_restart": True,
+                "supports_display_setup": True,
+                "supports_reboot": True,
+                "supports_ssh": True,
+                "device_has_camera_support": False,
+            },
             "_cache_info": {
                 "metrics": get_cached_metrics.cache_info(),
                 "display": get_cached_display_info.cache_info(),
