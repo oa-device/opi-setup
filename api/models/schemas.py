@@ -9,6 +9,7 @@ class SystemMetrics(BaseModel):
     disk: Dict
     network: Optional[Dict] = None
     boot_time: Optional[float] = None
+    temperature: Optional[Dict] = None  # Added for consistency with macos-api
 
 
 class PlayerStatus(BaseModel):
@@ -60,7 +61,9 @@ class HealthResponse(BaseModel):
     metrics: SystemMetrics
     deployment: Dict
     player: PlayerStatus
-    health_scores: HealthScore
+    device_info: DeviceInfo
+    display: Dict
+    capabilities: Dict[str, bool]
     _cache_info: Optional[Dict] = None
 
 
