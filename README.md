@@ -1,199 +1,57 @@
-# OrangeAd Player on OrangePi 5B Guide
+# opi-setup
 
-Designed for OrangePi 5B devices. This internal guide covers setup, configuration, and operation using project scripts.
+OrangePi 5B device management system providing health monitoring API and player utilities for digital signage deployment.
 
-Refer to the **"Onboarding New OrangePi"** section for instructions on creating a microSD card to onboard more OrangePi devices.
+## Overview
 
-## Project Structure Highlights
+**API Service:** FastAPI health monitoring (port 9090)  
+**Scripts:** Device configuration, player management, system utilities  
+**Purpose:** Deployed on remote OrangePi devices for centralized monitoring
 
-Key scripts and their purposes in the OrangeAd Player project:
+📚 **[Complete Documentation](../docs/README.md)**
 
-- `oasetup` (`setup.sh`): Handles all initial system configurations. The original script (`setup.sh`) is intended to be run once. Afterwards, use `oasetup` for easy access.
-- `oaplayer` (`player-config.sh`): Manages the Player app, including release selection and autorun configuration. After the initial `setup.sh` has been run, use `oaplayer` for easy access.
-- `oasync`: A utility for updating the project from the Git repository while preserving local `config/` folder changes. It stashes local changes, pulls updates, reapplies the stash, and then runs `oasetup` and `oaplayer`.
-- `oadisplay`: Edit the `config/display.conf` file with expected display resolution and orientation settings. The script also rerun `display.sh` to apply the changes.
-- `oalogcl`: Cleans up old logs in the `chromium_log` and `watchdog` directories, removing files older than 30 days to free up space.
-- `oasvc`: Checks and prints the status of all systemd services related to the player, including `slideshow-player.service` and others in the `systemd/` directory.
-- `hostname-change.sh`: Change the device hostname to match the project and device number.
-- `sreboot`: Reboots the device.
+## Key Scripts
 
-## Auto-Run Processes on Boot
+**Utility Commands:**
+- `oasetup` - System configuration and package installation
+- `oaplayer` - Player app management and release selection  
+- `oasync` - Project updates with config preservation
+- `oadisplay` - Display resolution and orientation setup
+- `oasvc` - Service status monitoring
+- `sreboot` - Device reboot
 
-Services configured to run automatically on boot:
+**Systemd Services:**
+- `slideshow-player.service` - Core player functionality
+- `display-setup.service` - Display configuration on boot
+- `chromium-log-monitor.service` - Log filtering and cleanup
+- `hide-cursor.service` - Cursor hiding for displays
 
-- `slideshow-player.service`: Configures the Player to start automatically on boot, the core functionality of the project.
-- `chromium-log-monitor.service`: Runs `chromium-log-monitor` to filter and store relevant logs every days, eliminating unnecessary Chrome logs.
-- `display-setup.service`: Executes `display.sh` at boot for display resolution and orientation setup. See `config/display.conf` for specific configurations.
-- `hide-cursor.service`: Activates `unclutter` to hide the cursor after 2 seconds of inactivity.
-
-## FAQ
-
-### How to install the Player app?
+## Quick Start
 
 ```bash
+# Initial installation
 git clone https://github.com/oa-device/opi-setup.git ~/Orangead/player
-```
-
-For development purpose:
-
-```bash
-git clone -b dev https://github.com/oa-device/opi-setup.git ~/Orangead/player
-```
-
-### How to quickly update the project?
-
-```bash
-oasync
-```
-
-### How to update the system?
-
-```bash
-oasetup
-```
-
-### How to change display resolution and orientation?
-
-```bash
-oadisplay
-```
-
-### How to change from one release to another, or to update the player?
-
-```bash
-oaplayer
-```
-
-### How to reboot the device?
-
-```bash
-sreboot
-```
-
-### What to do if any of those 'oa...' commands cannot be found?
-
-If any of the `oa` commands cannot be found, as shown below:
-
-```bash
-orangepi@opi-kai:~$ oasetup
--bash: oasetup: command not found
-```
-
-Please follow these steps:
-
-- Run the `setup.sh` script directly inside the `~/Orangead/player` directory.
-- Exit the terminal then ssh into the machine again. Alternatively, you can run `source ~/.bashrc`.
-
-## Onboarding New OrangePi
-
-### Extremely crucial OS requirements
-
-**Must make sure**:
-
-- The OS you have is for the Orangepi **5B**. Installing wrong OS will brick the whole process.
-
-- **Must** use the Ubuntu **Jammy GNOME** version (not xfce, not custom OS).
-
-- Preferably use **16GB** microSD card. Max is **32GB**. Anything bigger than that will not work.
-
-**Why?** As of the time writing this guide, only the GNOME version has **3D acceleration** enabled by OrangePi. Without 3D acceleration, the slideshow player will not work properly.
-
-Steps to search for the OrangePi 5B OS:
-
-- Head to the [OrangePi 5B Download page](http://www.orangepi.org/html/hardWare/computerAndMicrocontrollers/service-and-support/Orange-Pi-5B.html).
-- Official Images -> Ubuntu image. Clicking on the Download will open the Google Drive where the manufacturer hosts the OS images.
-- You will see there's many options for the OS (Focal or Jammy, GNOME or xfce, etc.). Make sure you download the **Jammy GNOME** version (currently its name is **Orangepi5b_1.0.2_ubuntu_jammy_desktop_gnome_linux5.10.110.7z**)
-
-### 1. Initial SD Card Setup
-
-#### Default login credentials
-
-The default username and password for the OrangePi 5B is `orangepi` and `orangepi` respectively.
-
-#### 1.1. Install the OS to the SD Card
-
-- Use the [balenaEtcher](https://www.balena.io/etcher/) to install the OS to the SD Card. You can also use the `dd` command to do this, but I find balenaEtcher is more user-friendly.
-
-#### 1.2. Power up the OrangePi 5B with the SD Card
-
-- Plug in the SD Card to the OrangePi 5B **before** powering it up. The OrangePi 5B will set priority to boot from the SD Card if it detects one.
-
-#### 1.3. Clone the repository
-
-Clone the repository directly on the OrangePi 5B.
-
-```bash
-git clone https://github.com/oa-device/opi-setup.git ~/Orangead/player
-```
-
-#### 1.4. Install all the necessary packages
-
-```bash
 cd ~/Orangead/player
 ./setup.sh
+
+# Common operations
+oasync        # Update project
+oaplayer      # Configure player
+oadisplay     # Setup display
+oasvc         # Check services
+sreboot       # Reboot device
 ```
 
-> ⚠️ **IMPORTANT**: This step is **CRUCIAL**. It handles adding the `util-scripts/` folder to the PATH, installs all the necessary packages, and sets up the auto-run processes on boot.
+## Key Documentation
 
-### 2. Migrate from SD Card to eMMC
+- 🏗️ **[System Architecture](../docs/architecture/system_overview.md)** - Component overview
+- 📊 **[Health Scoring](../docs/monitoring/health_scoring.md)** - Monitoring details  
+- 🔧 **[Golden Signals](../docs/monitoring/golden_signals.md)** - Operational metrics
+- ⚡ **[Getting Started](../docs/development/getting_started.md)** - Development workflow
 
-Follow the guide Brown already made on Confluence to migrate the OS from the SD card to the eMMC. In brief, the steps are:
+## Device Onboarding Summary
 
-- On the corner bottom left, select `Applications -> Accessories -> balenaEtcher` and choose to **Clone drive**
-- Select the SD card as the source (normally the SD card is the `/dev/mmcblk1`)
-- Select the eMMC as the destination (normally the eMMC is the `/dev/mmcblk0`)
-- Click **Continue** and wait for the process to finish
-- Shut down the device and remove the SD card. Boot up the device again and it should boot from the eMMC
+**Requirements:** Ubuntu Jammy GNOME on OrangePi 5B, 16-32GB microSD  
+**Process:** Flash OS → Clone repo → Run `./setup.sh` → Configure hostname → Setup Tailscale → Configure player
 
-### 3. Post-Setup Procedures on each device
-
-#### 3.1. Change the device hostname
-
-The name format should be `<project><xxxx>` where:
-
-- `<project>` is the project name, for example `labatt`, `africa`, `arq`, etc.
-- `<xxxx>` is the number marked on the device.
-
-For example:
-
-- If there's only a number `3` stick to the OrangePi, there's high chance it's not yet designed for any project, the hostname should be `opi0003`.
-- If the OrangePi is marked with `Labatt0006`, the hostname should be `labatt0006`.
-
-Safe way to set up the hostname:
-
-```bash
-hostname-change.sh
-```
-
-#### 3.2. Tailscale Login
-
-To connect the device via Tailscale:
-
-```bash
-sudo tailscale up
-```
-
-Ensure that you log into Tailscale using the account `device@orangead.ca`. Once enrolled, the device is automatically registered with the same name as device's `hostname`. Remember to rename the device in the Tailscale admin console to match your intended name.
-
-#### 3.3. Setting up the Player
-
-Execute the `player.sh` script to set up the slideshow player:
-
-```bash
-oaplayer
-```
-
-**Note**:
-
-- The script will ask you to choose which release you want to use (`prod`, `preprod` or `staging`). Choose accordingly to your need.
-- Running the `player.sh` script will automatically set up the slideshow player to run on startup on the selected release. If you want to change the release, you can run the `player.sh` script again and choose a different release.
-
-### (Optional) If needed, update Remote Origin for very old devices
-
-Run these commands in each device's terminal:
-
-```bash
-cd ~/Orangead/player
-git remote set-url origin https://github.com/oa-device/opi-setup.git
-git remote -v
-```
+For detailed onboarding instructions, see the [complete guide](../docs/infrastructure/deployment.md).
