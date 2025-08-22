@@ -1,0 +1,73 @@
+#!/bin/bash
+
+source "$(dirname "$(readlink -f "$0")")/../helpers.sh" || {
+    echo "Error: Could not source helpers.sh"
+    exit 1
+}
+
+# Tailscale-specific header function
+print_tailscale_header() {
+    echo "-------------------------------------------------"
+    echo "           OrangePi Tailscale Utility           "
+    echo "-------------------------------------------------"
+}
+
+case "${1:-status}" in
+    "status"|"")
+        print_tailscale_header
+        print_section "DEVICE STATUS"
+        tailscale status --self
+        
+        print_section "IP ADDRESS"
+        IP=$(tailscale ip -4 2>/dev/null || echo "Not connected")
+        print_color "green" "$IP"
+        ;;
+        
+    "ip")
+        tailscale ip -4
+        ;;
+        
+    "restart")
+        print_section "RESTARTING TAILSCALE SERVICE"
+        sudo systemctl restart tailscaled
+        sleep 2
+        print_color "green" "Service restarted successfully."
+        tailscale status --self
+        ;;
+        
+    "tags")
+        print_section "TAILSCALE TAGS"
+        TAGS=$(tailscale status --json | jq -r '.Self.Tags[]?' 2>/dev/null | tr '\n' ', ' | sed 's/,$//' || echo "None")
+        print_color "green" "$TAGS"
+        ;;
+        
+    "ping")
+        target="${2:-$(hostname)}"
+        print_section "TESTING CONNECTIVITY"
+        print_color "yellow" "Testing connectivity to $target..."
+        if tailscale ping "$target" -c 3 >/dev/null 2>&1; then
+            print_color "green" "✓ $target is reachable"
+        else
+            print_color "red" "✗ $target is not reachable"
+        fi
+        ;;
+        
+    "help")
+        print_tailscale_header
+        print_section "USAGE"
+        echo "oatailscale [command]"
+        
+        print_section "COMMANDS"
+        echo "  status    Show status (default)"
+        echo "  ip        Show Tailscale IP address"
+        echo "  tags      Show Tailscale tags"
+        echo "  restart   Restart Tailscale service"
+        echo "  ping      Test connectivity to another device"
+        echo "  help      Show this help"
+        ;;
+        
+    *)
+        print_color "red" "Unknown command: $1"
+        echo "Use 'oatailscale help' for usage"
+        ;;
+esac
