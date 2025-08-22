@@ -64,9 +64,12 @@ async def health_check():
             status = "maintenance" if player["service_status"] == "active" else "offline"
 
         # Format response using standardized schemas while maintaining backward compatibility
+        # Use safe attribute access for hostname to handle both Pydantic and non-Pydantic cases
+        device_hostname = getattr(standardized_device, 'hostname', None) or platform.node()
+        
         return {
             "status": status,
-            "hostname": standardized_device.hostname,
+            "hostname": device_hostname,
             "timestamp": now.isoformat(),
             "timestamp_epoch": int(now.timestamp()),
             "version": standardized_version.dict(),
