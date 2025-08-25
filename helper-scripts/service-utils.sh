@@ -10,6 +10,7 @@ replace_placeholders() {
 	sudo sed -i "s|%PLAYER_INIT_SCRIPTS_DIR%|$PLAYER_INIT_SCRIPTS_DIR|g" "$service_file"
 	sudo sed -i "s|%PLAYER_SYSTEMD_DIR%|$PLAYER_SYSTEMD_DIR|g" "$service_file"
 	sudo sed -i "s|%PLAYER_UTIL_SCRIPTS_DIR%|$PLAYER_UTIL_SCRIPTS_DIR|g" "$service_file"
+	sudo sed -i "s|%ORANGEAD_ROOT_DIR%|$ORANGEAD_ROOT_DIR|g" "$service_file"
 }
 
 # Function to print a header
