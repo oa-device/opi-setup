@@ -7,7 +7,7 @@ source "$(dirname "$(readlink -f "$0")")/../helpers.sh" || {
 
 echo "---------- SETTING UP HEALTH CHECK API ----------"
 
-API_DIR="$PLAYER_ROOT_DIR/api"
+API_DIR="$ORANGEAD_ROOT_DIR/oaDeviceAPI"
 VENV_DIR="$API_DIR/.venv"
 
 # Function to check if a package is installed

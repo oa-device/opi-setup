@@ -33,7 +33,7 @@ source_helper_scripts
 
 # Load unified API configuration
 load_unified_api_config() {
-    local config_file="$PLAYER_CONFIG_DIR/unified_api_config.conf"
+    local config_file="$PLAYER_CONFIG_DIR/unified_api.conf"
     if [ -f "$config_file" ]; then
         source "$config_file"
     fi

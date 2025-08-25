@@ -39,7 +39,6 @@ if [ -n "$USERNAME" ] && [ -n "$IP" ]; then
         --exclude='preprod/' \
         --exclude='staging/' \
         --exclude='logs/*' \
-        --exclude='api/.venv/' \
         --exclude='**/__pycache__/' \
         --exclude='**/*.pyc' \
         --exclude='**/*.pyo' \

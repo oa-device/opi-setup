@@ -32,7 +32,6 @@ wheels/
 .venv/
 venv/
 ENV/
-api/.venv/
 
 # IDE
 .idea/

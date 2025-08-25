@@ -208,9 +208,9 @@ manage_device_api() {
 
     # Run migration script if available and not already migrated
     local migration_marker="$PLAYER_LOGS_DIR/.unified_api_migrated"
-    if [ -f "$PLAYER_ROOT_DIR/scripts/migrate-to-unified-api.sh" ] && [ ! -f "$migration_marker" ] && [ "$AUTO_MIGRATE" != "false" ]; then
+    if [ -f "$PLAYER_ROOT_DIR/util-scripts/api-migrate.sh" ] && [ ! -f "$migration_marker" ] && [ "$AUTO_MIGRATE" != "false" ]; then
         log_api_info "Running unified API migration..." "$OASYNC_LOG_FILE"
-        if "$PLAYER_ROOT_DIR/scripts/migrate-to-unified-api.sh" 2>&1 | tee -a "$OASYNC_LOG_FILE"; then
+        if "$PLAYER_ROOT_DIR/util-scripts/api-migrate.sh" 2>&1 | tee -a "$OASYNC_LOG_FILE"; then
             touch "$migration_marker"
             log_api_info "Unified API migration completed successfully" "$OASYNC_LOG_FILE"
         else
