@@ -1,0 +1,261 @@
+#!/bin/bash
+# OrangeAd API Control Script - Manages both legacy and unified APIs
+
+source "$(dirname "$(readlink -f "$0")")/../helpers.sh" || {
+    echo "Error: Could not source helpers.sh"
+    exit 1
+}
+
+# Configuration
+LEGACY_SERVICE="health-check-api.service"
+UNIFIED_SERVICE="oa-device-api.service"
+UNIFIED_API_DIR=$(get_device_api_dir)
+
+# Service management functions
+is_service_active() {
+    systemctl is-active --quiet "$1"
+}
+
+is_service_enabled() {
+    systemctl is-enabled --quiet "$1"
+}
+
+get_service_status() {
+    local service="$1"
+    if is_service_active "$service"; then
+        echo "active"
+    elif systemctl is-failed --quiet "$service"; then
+        echo "failed"
+    else
+        echo "inactive"
+    fi
+}
+
+# API management functions
+status() {
+    echo "=== OrangeAd Device API Status ==="
+    echo
+    
+    # Device detection
+    if is_orangead_device; then
+        echo "Environment: DEVICE"
+    else
+        echo "Environment: DEVELOPMENT"
+    fi
+    
+    # API management status
+    if should_manage_device_api; then
+        echo "Unified API Management: ENABLED"
+    else
+        echo "Unified API Management: DISABLED"
+    fi
+    
+    echo
+    echo "--- Legacy API (health-check-api) ---"
+    echo "Service: $LEGACY_SERVICE"
+    echo "Status: $(get_service_status $LEGACY_SERVICE)"
+    echo "Enabled: $(systemctl is-enabled $LEGACY_SERVICE 2>/dev/null || echo 'disabled')"
+    if is_service_active "$LEGACY_SERVICE"; then
+        echo "Port: ${LEGACY_API_PORT:-9090}"
+    fi
+    
+    echo
+    echo "--- Unified API (oaDeviceAPI) ---"
+    if [ -d "$UNIFIED_API_DIR" ]; then
+        echo "Repository: AVAILABLE ($UNIFIED_API_DIR)"
+        cd "$UNIFIED_API_DIR" 2>/dev/null && {
+            echo "Version: $(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
+            echo "Branch: $(git symbolic-ref --short HEAD 2>/dev/null || echo 'detached')"
+        }
+    else
+        echo "Repository: NOT AVAILABLE"
+    fi
+    
+    if systemctl list-unit-files "$UNIFIED_SERVICE" &>/dev/null; then
+        echo "Service: $UNIFIED_SERVICE"
+        echo "Status: $(get_service_status $UNIFIED_SERVICE)"
+        echo "Enabled: $(systemctl is-enabled $UNIFIED_SERVICE 2>/dev/null || echo 'disabled')"
+        if is_service_active "$UNIFIED_SERVICE"; then
+            echo "Port: ${UNIFIED_API_PORT:-9091}"
+        fi
+    else
+        echo "Service: NOT CONFIGURED"
+    fi
+    
+    echo
+    echo "--- Configuration ---"
+    load_unified_api_config
+    echo "Rollout Stage: ${ROLLOUT_STAGE:-default}"
+    echo "Force Unified API: ${FORCE_UNIFIED_API:-false}"
+    echo "Emergency Disable: ${EMERGENCY_DISABLE:-false}"
+    echo "Auto Migration: ${AUTO_MIGRATE:-true}"
+}
+
+start_legacy() {
+    echo "Starting legacy API service..."
+    sudo systemctl start "$LEGACY_SERVICE"
+    sleep 2
+    if is_service_active "$LEGACY_SERVICE"; then
+        echo "✅ Legacy API started successfully"
+    else
+        echo "❌ Failed to start legacy API"
+        systemctl status "$LEGACY_SERVICE" --no-pager -l
+        return 1
+    fi
+}
+
+stop_legacy() {
+    echo "Stopping legacy API service..."
+    sudo systemctl stop "$LEGACY_SERVICE"
+    echo "✅ Legacy API stopped"
+}
+
+start_unified() {
+    if [ ! -d "$UNIFIED_API_DIR" ]; then
+        echo "❌ Unified API not available. Run 'oasync' first to clone the repository."
+        return 1
+    fi
+    
+    if ! systemctl list-unit-files "$UNIFIED_SERVICE" &>/dev/null; then
+        echo "❌ Unified API service not configured. Run migration script first."
+        return 1
+    fi
+    
+    echo "Starting unified API service..."
+    sudo systemctl start "$UNIFIED_SERVICE"
+    sleep 2
+    if is_service_active "$UNIFIED_SERVICE"; then
+        echo "✅ Unified API started successfully"
+    else
+        echo "❌ Failed to start unified API"
+        systemctl status "$UNIFIED_SERVICE" --no-pager -l
+        return 1
+    fi
+}
+
+stop_unified() {
+    if systemctl list-unit-files "$UNIFIED_SERVICE" &>/dev/null; then
+        echo "Stopping unified API service..."
+        sudo systemctl stop "$UNIFIED_SERVICE"
+        echo "✅ Unified API stopped"
+    else
+        echo "⚠️  Unified API service not configured"
+    fi
+}
+
+switch_to_unified() {
+    echo "=== Switching to Unified API ==="
+    
+    # Stop legacy
+    if is_service_active "$LEGACY_SERVICE"; then
+        stop_legacy
+    fi
+    
+    # Start unified
+    start_unified || {
+        echo "❌ Failed to start unified API, rolling back to legacy"
+        start_legacy
+        return 1
+    }
+    
+    echo "✅ Successfully switched to unified API"
+}
+
+switch_to_legacy() {
+    echo "=== Switching to Legacy API ==="
+    
+    # Stop unified
+    if systemctl list-unit-files "$UNIFIED_SERVICE" &>/dev/null && is_service_active "$UNIFIED_SERVICE"; then
+        stop_unified
+    fi
+    
+    # Start legacy
+    start_legacy || {
+        echo "❌ Failed to start legacy API"
+        return 1
+    }
+    
+    echo "✅ Successfully switched to legacy API"
+}
+
+health_check() {
+    local port="${1:-${LEGACY_API_PORT:-9090}}"
+    local endpoint="http://localhost:${port}/health"
+    
+    echo "Checking API health at $endpoint..."
+    
+    if curl -s --connect-timeout 5 --max-time 10 "$endpoint" >/dev/null 2>&1; then
+        echo "✅ API health check passed"
+        return 0
+    else
+        echo "❌ API health check failed"
+        return 1
+    fi
+}
+
+# Usage function
+usage() {
+    cat << EOF
+OrangeAd API Control Script (oapictl)
+
+Usage: oapictl [command]
+
+Commands:
+    status          Show current status of both APIs
+    start-legacy    Start legacy health-check-api service
+    stop-legacy     Stop legacy health-check-api service
+    start-unified   Start unified oaDeviceAPI service
+    stop-unified    Stop unified oaDeviceAPI service
+    switch-unified  Switch from legacy to unified API
+    switch-legacy   Switch from unified to legacy API
+    health [port]   Check API health (default port: 9090)
+    help            Show this help message
+
+Examples:
+    oapictl status
+    oapictl switch-unified
+    oapictl health 9091
+    oapictl switch-legacy
+
+EOF
+}
+
+# Main script logic
+case "$1" in
+    status)
+        status
+        ;;
+    start-legacy)
+        start_legacy
+        ;;
+    stop-legacy)
+        stop_legacy
+        ;;
+    start-unified)
+        start_unified
+        ;;
+    stop-unified)
+        stop_unified
+        ;;
+    switch-unified)
+        switch_to_unified
+        ;;
+    switch-legacy)
+        switch_to_legacy
+        ;;
+    health)
+        health_check "$2"
+        ;;
+    help|--help|-h)
+        usage
+        ;;
+    "")
+        status
+        ;;
+    *)
+        echo "Unknown command: $1"
+        echo
+        usage
+        exit 1
+        ;;
+esac
