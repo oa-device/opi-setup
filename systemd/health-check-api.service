@@ -7,12 +7,12 @@ Type=simple
 User=orangepi
 Group=orangepi
 WorkingDirectory=%ORANGEAD_ROOT_DIR%/oaDeviceAPI
-Environment="PATH=/usr/bin:/usr/sbin:/usr/local/bin:%ORANGEAD_ROOT_DIR%/oaDeviceAPI/.venv/bin:$PATH"
-Environment="PYTHONPATH=%ORANGEAD_ROOT_DIR%/oaDeviceAPI/src"
-Environment="PYTHONUNBUFFERED=1"
-Environment="DISPLAY=:0.0"
-Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
-Environment="XAUTHORITY=/run/user/1000/gdm/Xauthority"
+Environment=PATH=/usr/bin:/usr/sbin:/usr/local/bin:%ORANGEAD_ROOT_DIR%/oaDeviceAPI/.venv/bin
+Environment=PYTHONPATH=%ORANGEAD_ROOT_DIR%/oaDeviceAPI/src
+Environment=PYTHONUNBUFFERED=1
+Environment=DISPLAY=:0.0
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+Environment=XAUTHORITY=/run/user/1000/gdm/Xauthority
 
 StandardOutput=file:%ORANGEAD_ROOT_DIR%/oaDeviceAPI/logs/health_check_api.log
 StandardError=file:%ORANGEAD_ROOT_DIR%/oaDeviceAPI/logs/health_check_api.log
