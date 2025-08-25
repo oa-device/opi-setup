@@ -118,6 +118,112 @@ apply_stashed_changes() {
     fi
 }
 
+# Manage oaDeviceAPI for device environments only
+manage_device_api() {
+    if ! should_manage_device_api; then
+        log_api_info "Skipping oaDeviceAPI management (not a device environment or disabled)" "$OASYNC_LOG_FILE"
+        log_device_detection "$OASYNC_LOG_FILE"
+        return 0
+    fi
+
+    log_api_info "Managing oaDeviceAPI for device environment..." "$OASYNC_LOG_FILE"
+    log_device_detection "$OASYNC_LOG_FILE"
+    
+    # Load configuration
+    load_unified_api_config
+    
+    local api_dir=$(get_device_api_dir)
+    local api_repo_url="https://github.com/oa-device/oaDeviceAPI.git"
+    local max_retries="${CLONE_RETRY_COUNT:-3}"
+    local retry_delay="${CLONE_RETRY_DELAY:-5}"
+    local retry_count=0
+
+    log_api_debug "Target directory: $api_dir" "$OASYNC_LOG_FILE"
+    log_api_debug "Repository URL: $api_repo_url" "$OASYNC_LOG_FILE"
+    log_api_debug "Max retries: $max_retries" "$OASYNC_LOG_FILE"
+
+    # Ensure parent directory exists
+    mkdir -p "$ORANGEAD_ROOT_DIR" || {
+        log_api_error "Could not create Orangead root directory: $ORANGEAD_ROOT_DIR" "$OASYNC_LOG_FILE"
+        return 1
+    }
+
+    # Clone or update oaDeviceAPI
+    if [ ! -d "$api_dir" ]; then
+        log_api_info "Cloning oaDeviceAPI to $api_dir..." "$OASYNC_LOG_FILE"
+        
+        while [ $retry_count -lt $max_retries ]; do
+            if timeout "${NETWORK_TIMEOUT:-30}" git clone "$api_repo_url" "$api_dir" 2>/dev/null; then
+                log_api_info "Successfully cloned oaDeviceAPI" "$OASYNC_LOG_FILE"
+                break
+            else
+                retry_count=$((retry_count + 1))
+                log_api_warn "Clone attempt $retry_count/$max_retries failed, retrying in ${retry_delay}s..." "$OASYNC_LOG_FILE"
+                sleep "$retry_delay"
+            fi
+        done
+
+        if [ $retry_count -eq $max_retries ]; then
+            log_api_error "Failed to clone oaDeviceAPI after $max_retries attempts" "$OASYNC_LOG_FILE"
+            return 1
+        fi
+    else
+        log_api_info "Updating existing oaDeviceAPI..." "$OASYNC_LOG_FILE"
+        
+        cd "$api_dir" || {
+            log_api_error "Could not navigate to $api_dir" "$OASYNC_LOG_FILE"
+            return 1
+        }
+
+        # Check current state
+        local current_commit=$(git rev-parse --short HEAD 2>/dev/null)
+        log_api_debug "Current commit: $current_commit" "$OASYNC_LOG_FILE"
+
+        # Reset any local changes and pull latest
+        git reset --hard HEAD >/dev/null 2>&1
+        git clean -fd >/dev/null 2>&1
+        
+        while [ $retry_count -lt $max_retries ]; do
+            if timeout "${NETWORK_TIMEOUT:-30}" git pull origin main >/dev/null 2>&1; then
+                local new_commit=$(git rev-parse --short HEAD 2>/dev/null)
+                log_api_info "Successfully updated oaDeviceAPI ($current_commit -> $new_commit)" "$OASYNC_LOG_FILE"
+                break
+            else
+                retry_count=$((retry_count + 1))
+                log_api_warn "Pull attempt $retry_count/$max_retries failed, retrying in ${retry_delay}s..." "$OASYNC_LOG_FILE"
+                sleep "$retry_delay"
+            fi
+        done
+
+        if [ $retry_count -eq $max_retries ]; then
+            log_api_error "Failed to update oaDeviceAPI after $max_retries attempts" "$OASYNC_LOG_FILE"
+            return 1
+        fi
+
+        cd "$PLAYER_ROOT_DIR" || {
+            log_api_error "Could not return to player root directory" "$OASYNC_LOG_FILE"
+            return 1
+        }
+    fi
+
+    # Run migration script if available and not already migrated
+    local migration_marker="$PLAYER_LOGS_DIR/.unified_api_migrated"
+    if [ -f "$PLAYER_ROOT_DIR/scripts/migrate-to-unified-api.sh" ] && [ ! -f "$migration_marker" ] && [ "$AUTO_MIGRATE" != "false" ]; then
+        log_api_info "Running unified API migration..." "$OASYNC_LOG_FILE"
+        if "$PLAYER_ROOT_DIR/scripts/migrate-to-unified-api.sh" 2>&1 | tee -a "$OASYNC_LOG_FILE"; then
+            touch "$migration_marker"
+            log_api_info "Unified API migration completed successfully" "$OASYNC_LOG_FILE"
+        else
+            log_api_warn "Unified API migration failed, will retry next sync" "$OASYNC_LOG_FILE"
+        fi
+    elif [ -f "$migration_marker" ]; then
+        log_api_debug "Migration already completed (marker exists)" "$OASYNC_LOG_FILE"
+    fi
+
+    log_api_info "oaDeviceAPI management completed successfully" "$OASYNC_LOG_FILE"
+    return 0
+}
+
 # Run custom setup and player scripts
 run_oa_scripts() {
     "$PLAYER_UTIL_SCRIPTS_DIR/oasetup" || {
@@ -149,6 +255,7 @@ main() {
     manage_stashes
     pull_latest_changes
     apply_stashed_changes
+    manage_device_api
     run_oa_scripts
 }
 
