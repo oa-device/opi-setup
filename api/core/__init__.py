@@ -1,3 +1,0 @@
-"""
-Core configuration module.
-""" 
